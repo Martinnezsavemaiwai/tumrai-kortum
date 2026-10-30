@@ -35,13 +35,18 @@ The voice lines are not in the repo (ElevenLabs free-plan audio). Put `ELEVENLAB
 | path | what |
 |---|---|
 | `halloween-ep1/` | EP1: `score.js` (timeline), `song.js` (sound), `film.js` (shots), `chibi.js` (characters), `engine/` |
+| `halloween-ep2a/` | EP2 branch A "ถอด" |
+| `halloween-ep3/` | EP3 "เปิด" |
+| `brand/` | channel profile picture (orange-cat mascot) |
 | `.agents/skills/tumraikortum/` | the skill: workflow, references, scripts |
-| `docs/` | research notes (licences, voices, skills) |
+| `docs/` | research notes (licences, voices, skills) and the season plan |
 | `halloween-script.md` | story bible and scripts for EP1/EP2 |
 | `build_ep1.py`, `sfx.py`, `tts_ep1.py` | the earlier slideshow prototype (kept for reference) |
 
-## Credits and licences
+## Licence
 
+- **Code** (scripts, the agent skill, drawing/animation/sound code): [MIT](LICENSE).
+- **Content** (stories, characters, the TumraiKortum / ทำไรก็ทำ name, the orange-cat mascot, the videos): **all rights reserved**, see [LICENSE-CONTENT.md](LICENSE-CONTENT.md).
 - Rendering engine in `*/engine/`: from the animation-studio plugin by Afaq Rashid, MIT (see `engine/LICENSE`); patched for Windows.
 - Fonts: Kanit and the engine fonts are SIL Open Font License.
-- ElevenLabs audio generated on the free plan is non-commercial.
+- ElevenLabs audio generated on the free plan is non-commercial and is not in this repository.
