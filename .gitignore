@@ -1,0 +1,32 @@
+# --- secrets: never commit ---
+.env
+.env.*
+*.key
+
+# --- renders and intermediates (huge, rebuilt by the scripts) ---
+output/
+**/out/
+*.mp4
+*.wav
+
+# --- generated voice (ElevenLabs free plan = non-commercial; rebuild with tts_ep1.py) ---
+voice/
+
+# --- old AI-generated stills from the slideshow version (not used by the animation) ---
+images/
+
+# --- fonts are downloaded by setup (Kanit, SIL OFL) ---
+/fonts/
+**/assets/fonts/
+
+# --- third-party skills installed locally (install from their own repos) ---
+.claude/skills/canvas-procedural-animation/
+.claude/skills/captions-overlay/
+.claude/settings.local.json
+
+# --- OS / tools ---
+Thumbs.db
+.DS_Store
+__pycache__/
+*.pyc
+node_modules/
