@@ -22,12 +22,12 @@ for (const [t0, t1, g] of [[ev.hits[2], ev.choice, 0.08]]) {
   drone.addStereo(L, R, t0, g); verb.addStereo(L, R, t0, g * 0.6);
 }
 
-// ---------- outside wind (shots 3–4) ----------
-wind.addMono(I.noiseSweep(9, 300, 900, { q: 0.7, pink: true, shape: (x) => Math.sin(Math.PI * x) }), 9, 0.25);
+// ---------- door-camera hiss (shot 4) ----------
+wind.addMono(I.noiseSweep(4, 2500, 3500, { q: 0.6, shape: () => 1 }), 14, 0.05);
 
 // ---------- fx tied to score events ----------
-fx.addMono(I.tvClick(), ev.knobTurn, 0.5);
-fx.addMono(I.noiseSweep(1.8, 900, 400, { q: 6 }), ev.doorOpen, 0.12); // door creak
+fx.addMono(I.tvClick(), ev.letGo, 0.4); // the knob springs back
+for (const t of ev.knocks) { fx.addMono(I.thud(70, 0.12), t, 1.0); fx.addMono(I.woodTick(0.4), t, 0.5); } // pounding, then nothing
 for (const t of ev.drips) { fx.addMono(I.pop(1800), t, 0.25); verb.addMono(I.pop(1800), t, 0.2); }
 for (const t of ev.blinks) fx.addMono(I.tvClick(), t, 0.4);
 fx.addMono(I.thud(90, 0.06), ev.blackout, 0.6); // the lights die

@@ -23,9 +23,9 @@
   // [start, Thai (\n = break), English, red?, voice key, eleven_v3 tag]
   const SHOTS = [
     [0, 'อย่าให้มันรู้\nว่าคุณรู้', "Don't let it know that you know.", true, 'narr', '[whispers]'],
-    [4, 'มายด์เปิดประตู', 'Mind opens the door.'],
-    [9, 'ข้างนอกไม่มีใคร', "There's no one outside."],
-    [14, 'พื้นแห้งสนิท', 'The ground is bone dry.'],
+    [4, 'มายด์ปล่อยมือ\nจากลูกบิด', 'Mind lets go of the knob.'],
+    [9, 'เสียงทุบ\nหยุดไปเอง', 'The pounding just… stops.'],
+    [14, 'กล้องหน้าบ้าน\nไม่เห็นใครเลย', 'The door camera shows no one.'],
     [18, 'แต่ในบ้าน\nมีรอยเท้าเปียก', 'But inside, there are wet footprints.'],
     [23, 'ผีปอบหายไปแล้ว', 'Pob is gone.', true, 'narr', '[whispers]'],
     [28, '"เดี๋ยวนะ\nต้นไปไหน"', '"Wait… where did Ton go?"', false, 'bell', '[nervous]'],
@@ -51,8 +51,9 @@
   const shotAt = (n) => SHOTS[n - 1].t;
 
   const ev = {
-    knobTurn: 4.2,
-    doorOpen: 5.0, // the door swings open over ~2 s
+    // EP2 vote = "ไม่เปิด": Mind lets go, the pounding comes back and then just stops
+    letGo: 4.2,
+    knocks: [6.2, 6.8, 7.4, 8.0], // after the shot-2 line, before the shot-3 line
     drips: [18.6, 19.5, 20.6, 50.4, 51.6],
     blinks: [32.3, 32.9], // two flickers, then dark
     blackout: 33.6,
@@ -74,7 +75,7 @@
 
   const subtitles = SHOTS.filter((s) => s.th).map((s) => ({ t: s.t + 0.15, end: s.end, text: s.th, en: s.en, red: s.red }));
   const soundTags = [
-    [4.2, 8, '[ เอี๊ยด… ]'], [32.2, 36, '[ ไฟช็อต… ]'], [38.5, 41, '[ ฟุ่บ ]'], [77, 82, '[ กรอเทปย้อน… ]'], [82.4, 87, '[ ตุบ… ตุบ… ]'],
+    [6.1, 8.6, '[ ปัง! ปัง! ปัง! ]'], [32.2, 36, '[ ไฟช็อต… ]'], [38.5, 41, '[ ฟุ่บ ]'], [77, 82, '[ กรอเทปย้อน… ]'], [82.4, 87, '[ ตุบ… ตุบ… ]'],
   ].map(([t, end, text]) => ({ t, end, text }));
 
   // lights: flicker before the blackout, dark until they come back on one by one

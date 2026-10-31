@@ -153,19 +153,32 @@
   }
 
   // ---------------- door camera (grainy green feed): Ton on WET ground with NO shadow ----------------
-  function doorCam(ctx, t, { zoom = 1 } = {}) {
+  // empty: no Ton and no puddle — the porch is empty and the ground is dry (EP3 "ไม่เปิด", shot 4)
+  function doorCam(ctx, t, { zoom = 1, empty = false } = {}) {
     ctx.save();
     ctx.fillStyle = '#0B140E'; ctx.fillRect(0, 0, W, H);
     ctx.translate(W / 2, H * 0.55); ctx.scale(zoom, zoom); ctx.translate(-W / 2, -H * 0.55);
     // porch
     ctx.fillStyle = '#1C2A20'; ctx.fillRect(0, 0, W, H * 0.62);
     ctx.fillStyle = '#2A3A2C'; ctx.fillRect(0, H * 0.62, W, H);
-    // the wet patch: a glossy puddle right where he stands, nowhere else
-    const g = ctx.createRadialGradient(W / 2, H * 0.74, 20, W / 2, H * 0.74, 330);
-    g.addColorStop(0, 'rgba(170,230,190,0.55)'); g.addColorStop(1, 'rgba(170,230,190,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.74, 330, 70, 0, 0, Math.PI * 2); ctx.fill();
-    for (let k = 0; k < 5; k++) G.line(ctx, [[W / 2 - 200 + k * 90, H * 0.73], [W / 2 - 160 + k * 90, H * 0.735]], { color: 'rgba(220,255,230,0.5)', lw: 3, seed: 600 + k });
-    K.chibi(ctx, { x: W / 2, y: H * 0.74, s: 1.2, who: 'ton', t, shadow: false, eyes: 'normal', mouth: 'flat', armR: 0.4, seed: 90 });
+    if (empty) {
+      // enough contrast that the green feed still reads as a porch: fence, a lamp, a pumpkin, the step edge
+      for (let k = 0; k < 9; k++) K.rr(ctx, k * 130 - 20, H * 0.44, 26, 170, 6, '#5A6E5C', 654 + k, { hatch: false });
+      G.line(ctx, [[-40, H * 0.47], [W + 40, H * 0.47]], { color: '#5A6E5C', lw: 14, seed: 664 });
+      glow(ctx, W * 0.82, H * 0.3, 260, '230,255,235', 0.55); K.ell(ctx, W * 0.82, H * 0.3, 26, 34, '#E8FFE8', 665, { hatch: false });
+      ctx.fillStyle = '#3E5240'; ctx.fillRect(0, H * 0.62, W, 18);
+      pumpkin(ctx, W * 0.2, H * 0.8, 1.0, t, 66, 0.8);
+      for (let k = 0; k < 40; k++) { ctx.fillStyle = 'rgba(10,20,12,0.5)'; ctx.fillRect(U.hash(k, 21) * W, H * 0.62 + U.hash(k, 22) * H * 0.38, 4, 4); } // dry concrete grit
+      const sway = Math.sin(t * 1.3) * 18; // a dry leaf in the wind
+      K.poly(ctx, [[480 + sway, H * 0.74], [520 + sway, H * 0.735], [505 + sway, H * 0.755]], '#4A6A50', 653, { hatch: false });
+    } else {
+      // the wet patch: a glossy puddle right where he stands, nowhere else
+      const g = ctx.createRadialGradient(W / 2, H * 0.74, 20, W / 2, H * 0.74, 330);
+      g.addColorStop(0, 'rgba(170,230,190,0.55)'); g.addColorStop(1, 'rgba(170,230,190,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.74, 330, 70, 0, 0, Math.PI * 2); ctx.fill();
+      for (let k = 0; k < 5; k++) G.line(ctx, [[W / 2 - 200 + k * 90, H * 0.73], [W / 2 - 160 + k * 90, H * 0.735]], { color: 'rgba(220,255,230,0.5)', lw: 3, seed: 600 + k });
+      K.chibi(ctx, { x: W / 2, y: H * 0.74, s: 1.2, who: 'ton', t, shadow: false, eyes: 'normal', mouth: 'flat', armR: 0.4, seed: 90 });
+    }
     ctx.restore();
     // monochrome green + scanlines + noise + timestamp
     ctx.save(); ctx.globalCompositeOperation = 'color'; ctx.fillStyle = '#3CFF7A'; ctx.fillRect(0, 0, W, H); ctx.restore();
@@ -260,16 +273,17 @@
   const film = Shots.film([
     { at: at(1), draw(ctx, t) { doorInside(ctx, t, { hand: 1 }); light(ctx, t, { cx: 800, cy: 900, dark: 0.1 }); }, cam: Shots.combine(Shots.push(1.15, 1.25), shakeAt(at(1), 12)) }, // 1: Mind's hand on the knob
 
-    { at: at(2), draw(ctx, t) { // 2: the door swings open, moonlight in
-      const o = ease.inOutCubic(clamp((t - ev.doorOpen) / 2.0));
-      doorInside(ctx, t, { hand: 1 - o, open: o });
-      glow(ctx, 540, 860, 520, '200,210,255', 0.3 * o);
+    { at: at(2), draw(ctx, t) { // 2: Mind lets go of the knob — then the pounding comes back
+      const off = ease.inOutCubic(clamp((t - ev.letGo) / 1.2));
+      const k = ev.knocks.reduce((a, kt) => a + (t >= kt ? Math.exp(-(t - kt) * 12) : 0), 0);
+      doorInside(ctx, t, { hand: 1 - off, shake: 26 * k });
+      if (k > 0.02) { ctx.save(); ctx.fillStyle = `rgba(255,236,210,${Math.min(0.5, k * 0.5)})`; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.restore(); } // dust off the frame
       light(ctx, t, { cx: 540, cy: 860 });
-    }, cam: Shots.push(1.0, 1.15) },
+    }, cam: (s) => { const k = ev.knocks.reduce((a, kt) => a + (s.t >= kt ? Math.exp(-(s.t - kt) * 10) : 0), 0); return { x: U.noise1(s.t * 30, 5) * 18 * k, zoom: lerp(1.15, 1.0, s.u) }; } },
 
-    { at: at(3), in: 'zoom', draw(ctx, t) { porch(ctx, t); light(ctx, t, { cy: H * 0.4 }); } }, // 3: nobody outside
+    { at: at(3), draw(ctx, t) { doorInside(ctx, t, {}); light(ctx, t, { cx: 540, cy: 860, dark: 0.12 }); }, cam: Shots.push(1.0, 1.2) }, // 3: …and it just stops. Silence.
 
-    { at: at(4), draw(ctx, t, s) { porch(ctx, t, { zoom: lerp(1.6, 2.2, ease.inOutQuad(s.u)) }); light(ctx, t, { cy: H * 0.7 }); } }, // 4: the ground is dry
+    { at: at(4), in: 'zoom', draw(ctx, t, s) { doorCam(ctx, t, { empty: true, zoom: lerp(1.0, 1.4, ease.inOutQuad(s.u)) }); } }, // 4: the door camera: nobody, dry ground
 
     { at: at(5), in: 'whip', draw(ctx, t, s) { // 5: wet footprints walking into the house
       room(ctx, t);
@@ -412,8 +426,8 @@
     const g = ctx.createLinearGradient(0, 0, 0, 900); g.addColorStop(0, 'rgba(8,6,16,0.92)'); g.addColorStop(1, 'rgba(8,6,16,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, 900);
     ctx.save(); ctx.translate(W / 2, 330); ctx.rotate(-0.04);
-    ctx.fillStyle = '#F2B84B'; ctx.beginPath(); ctx.roundRect(-200, -52, 400, 88, 22); ctx.fill();
-    txt(ctx, 'EP.3 เปิด', 0, 20, 58, '#2A2320'); ctx.restore();
+    ctx.fillStyle = '#F2B84B'; ctx.beginPath(); ctx.roundRect(-240, -52, 480, 88, 22); ctx.fill();
+    txt(ctx, 'EP.3 ไม่เปิด', 0, 20, 58, '#2A2320'); ctx.restore();
     for (const [i, line] of ['อย่าให้มันรู้', 'ว่าคุณรู้'].entries()) {
       const y = 540 + i * 150;
       ctx.save(); ctx.font = '700 124px Kanit'; const w = ctx.measureText(line).width; ctx.restore();
