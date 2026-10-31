@@ -126,7 +126,13 @@
     if (!sub) return;
     const { W, H } = o, style = STYLES[o.style || 'outline'];
     if (!style) throw new Error(`unknown sub style ${o.style}; have ${Kit.SUB_STYLES.join(', ')}`);
-    const font = o.font || 'Kanit', weight = o.weight || 700, base = H * (W > H ? 0.87 : 0.75); // 16:9: low, like TV subtitles; 9:16: above the platform UI
+    const font = o.font || 'Kanit', weight = o.weight || 700, safe = o.safe || (globalThis.G && globalThis.G.SAFE);
+    let base = H * (W > H ? 0.87 : 0.75); // 16:9: low, like TV subtitles; 9:16: above the platform UI
+    // the English line goes under the rail and must end inside the safe area (9:16: H·0.78, where the platform UI starts):
+    // lift the block just enough (9:16: 14 px, so a one-line sub still clears faces at H·0.70), then close the gap
+    const safeBottom = safe ? safe.y + safe.h : Infinity;
+    if (sub.en) base = Math.min(base, safeBottom - 72);
+    const enGap = Math.min(70, safeBottom - 12 - base);
     const keep = o.style === 'keyword' && !sub.red, lines = sub.text.split('\n').map((ln) => (keep ? ln : ln.replace(/\*/g, '')));
     const size = (sub.red ? 96 : 84) * (o.scale || 1) * (W > H ? 0.78 : 1), lh = size * 1.22;
     const counts = lines.map((ln) => words(ln.replace(/\*/g, '')).length), total = counts.reduce((a, b) => a + b, 0);
@@ -153,7 +159,12 @@
     }
     if (sub.en) {
       ctx.globalAlpha = clamp((t - sub.t) / 0.25); ctx.textAlign = 'center';
-      ctx.font = `500 38px Kanit`; outlined(ctx, sub.en, W / 2, base + 70, '#D8D8D8', '#000', 8);
+      // as wide as the safe area allows around the centre (9:16: the right side has the platform's buttons)
+      const room = safe ? 2 * Math.min(W / 2 - safe.x, safe.x + safe.w - W / 2) - 16 : W;
+      ctx.font = `500 38px Kanit`;
+      const fit = Math.min(1, room / ctx.measureText(sub.en).width);
+      if (fit < 1) ctx.font = `500 ${Math.floor(38 * fit)}px Kanit`;
+      outlined(ctx, sub.en, W / 2, base + enGap, '#D8D8D8', '#000', 8);
     }
     ctx.restore();
   };

@@ -145,7 +145,7 @@ Render ใช้งานได้จริง: ทดสอบ `render.js still
 | M4 | expression blending, auto blink/breath, secondary motion | ✅ เสร็จ (ดู §10) |
 | M5 | shot list เป็นข้อมูล, shot types, ตรวจ storyboard ↔ score | ✅ เสร็จ (ดู §11) |
 | M6 | skills แยกบทบาท (story-memory, continuity-checker, visual-quality-review) บน CLI จาก M2 | ✅ เสร็จ (ดู §12) |
-| M7 | QA หน้าตัวละคร/safe area, end-to-end test | หยุดขออนุมัติก่อน |
+| M7 | QA หน้าตัวละคร/safe area, end-to-end test | ✅ เสร็จ (ดู §13) |
 | — | รวม engine เป็นชุด canonical (P2) | เปลี่ยนโครงสร้าง: ต้องอนุมัติ |
 
 ## 9. ผลของ Milestone 2–3
@@ -262,3 +262,38 @@ ECU ของ cartoon คางตกใต้ซับ (จัดกลาง�
   และเจอเพิ่ม 3 ข้อที่ไม่ได้ฝัง (เลขช็อตของ e7/e8 ใน bible ไม่ตรง storyboard, คำสารภาพเฉลยปม t2 ครึ่งๆ, สำนวนพูดไม่ตรง `voice`); ไม่แก้ไฟล์ใด (ตรวจด้วย `cmp`)
 - จาก dry run แก้คำสั่ง 1 จุด: agent บอกว่าแก้ event ของตอน draft "ต้องเขียน proposal" ซึ่งเกินกฎ — เพิ่มว่า draft แก้ตรงผ่าน `story-memory`, เฉพาะ canon ที่ต้อง proposal
 - `visual-reviewer` ยังไม่ได้ dry run (การตรวจภาพแบบเดียวกันทำด้วยมือมาแล้วใน M3–M5)
+
+## 13. ผลของ Milestone 7 — Automated QA (`scripts/qa.mjs`, `references/qa.md`)
+
+ช่องว่างเดิมที่พบจากโค้ด: `render.js stills` พิมพ์ EXCEPTION แต่ยังเขียน PNG และ exit 0 (เฟรมพังดูเหมือนผ่าน);
+`render.js qa` ตรวจเฉพาะข้อความ; ไม่มีอะไรรู้ว่าหน้าตัวละครอยู่ตรงไหนในเฟรมจริง ไฟล์หาย เฟรมนิ่ง/ไม่คงที่ หรือหน้าตาที่วาดตรง bible ไหม
+
+ทำ (ไม่แก้ engine):
+- `qa.mjs` = static checks + วาดฟิล์มจริงใน headless Chrome (driver ขั้นต่ำของตัวเอง เพราะ render.js import ไม่ได้ — มี `ponytail:` note)
+  ครอบคลุมทั้ง 8 หัวข้อที่ขอ: story continuity, character consistency, animation timing (frozen), missing assets, invalid scene state,
+  rendering failures, frame quality (เฟรมไม่คงที่/เฟรมเรียบ), camera framing (ตำแหน่งหน้าจริงรวมกล้อง) — ตาราง: `references/qa.md`
+- `kit/rig.js` บันทึกตำแหน่งตา/คาง/หัวของทุกหน้าที่วาด **เฉพาะเมื่อ QA ขอ** (`R.faces = []`); ปกติไม่ทำอะไร
+- Test scene `examples/dialogue-demo` (4 ช็อต demo-dorm9 ep3: cast จาก bible, กล้อง Direct จาก SHOTS, การแสดง R.act) — ระหว่างทำแก้ bible e7/e8 ให้เลขช็อตตรง (ข้อที่ continuity-checker เจอใน M6; ep3 เป็น draft)
+
+ผลทดสอบจริง:
+- `qa.test.mjs` 5 ข้อ: unit ของการตรวจเฟรม + ฝังความผิดในสำเนาของ demo แล้ว QA ต้องเจอ — static 6 อย่าง (font หาย, script หาย, `Math.random`, cast.js ไม่ตรง bible, event ชี้ช็อตที่ไม่มี, ช็อตเรียงผิด) และ browser 5 อย่าง (crash ในช็อต 3, หน้าตกใต้ซับขณะมีซับ, ผมยาวทั้งที่ bible บอกบ๊อบ, ตัวละครนิ่งสนิท, เฟรมวาดซ้ำไม่เหมือนเดิม) — เจอครบ
+- ทั้งชุด `node --test ".agents/skills/tumraikortum/scripts/*.test.mjs"` → **40/40 ผ่าน** (≈ 3 s)
+- รันจริงบนของที่มีอยู่ (อ่านอย่างเดียว เขียนแค่ `out/qa/`): halloween-ep1/2a/3, explainer-demo, longform-demo, rig-lab, dialogue-demo — 0 errors ทุกตัว
+  (halloween ใช้ `K.chibi` จึงไม่มีข้อมูลหน้า; explainer/longform ด้วย rig ใหม่ในสำเนาชั่วคราว: ตรวจ 24 + 80 หน้า ไม่มีหน้าตกใต้ซับ; rig-lab เตือน 48 ข้อเพราะเป็น model sheet ไม่ใช่ฟิล์ม)
+- Visual review: `visual-reviewer` subagent (dry run ตัวที่สองของ M6) ดูภาพนิ่ง 8 เฟรมของ dialogue-demo เจอ 7 ข้อที่ QA อัตโนมัติวัดไม่ได้ — แขนภูมิโผล่ขอบเฟรมข้างร่มจนดูเหมือนเฉลยว่าใครเอาร่มคืน (ขัด f4 unknown), กล่องข้าวมันไก่ไม่สื่อ, สีหน้าภูมิไม่ตรงบท, ช็อต 1 นิ่ง/แพรวไม่มองประตู, ป้าย 305 ถูกตัด, ปฏิกิริยาภูมิอยู่นอกเฟรม — แก้แล้ว 6 ข้อ, QA ยังผ่าน
+  ข้อ 7: **ซับภาษาอังกฤษใน 9:16 ล้น safe area ด้านล่าง** (rail 0.75 H + บรรทัดอังกฤษ 70 px > 0.78 H) — ยืนยันว่าเป็นปัญหาเดิมของ `kit/style.js` (explainer-demo ก็โดน) **แก้แล้วหลังผู้ใช้อนุมัติ**: `Kit.subtitles` ยกบล็อกขึ้น 14 px และลดช่องว่างเฉพาะเมื่อมีบรรทัดอังกฤษ, ย่อบรรทัดอังกฤษที่กว้างเกิน safe area; engine `qa`: dialogue-demo 7 → 3, explainer-demo 9 → 3 ปัญหา (ที่เหลือเป็นป้ายในฉาก/contrast ไม่ใช่ซับ), longform-demo (16:9) ไม่เปลี่ยน; `docs/img/subtitles-safe-9x16.jpg` (เส้นแดง = ขอบ safe area 0.78 H)
+
+ข้อจำกัด: หน้าเฉพาะตัวละคร `kit/rig.js`; "นิ่ง" = เฟรมเหมือนกันทุกพิกเซล (ตัวที่แค่หายใจแต่ท่าแข็งต้องให้คนดู); เสียงไม่ได้ฟัง (sync/loudness ใช้ `verify`/`check` กับไฟล์สุดท้าย);
+ไม่ได้ render วิดีโอเต็มใน milestone ใดเลย (stills + QA เท่านั้น)
+
+## 14. Definition of Done — สถานะ
+
+| ข้อ | หลักฐาน |
+|---|---|
+| ระบบเดิมยังใช้งานได้ | ตอนเก่า/ตัวอย่างเดิมไม่ถูกแก้ (engine ไม่แตะ, kit ใหม่มีผลกับตอนที่ scaffold ใหม่); qa.mjs 0 errors บน halloween ×3 + demos; regression renders M3–M5 |
+| มีหลักฐานผลทดสอบ | 40 automated tests (story 16, motion 7, framing/lint 7, skills 5, QA 5) + dry run subagent 2 ตัว + ตัวเลขก่อน/หลัง M4 |
+| ตัวละครและฉากมีตัวอย่างเปรียบเทียบ | `docs/img/rig-*`, `motion-*`, `direct-*` |
+| Story Memory ทดสอบข้ามตอน | `story.test.mjs` (branch, look, presence, belief, threads, canon lock, proposals) |
+| เอกสารวิธีใช้งาน | `references/story-memory.md`, `directing.md`, `qa.md`, `chibi-rig.md` (R.act/R.check), role skills, `SKILL.md` Roles + workflow, รายงานนี้ |
+| ไม่สูญเสีย uncommitted work | working tree สะอาดตอนเริ่ม; ไม่ลบ/ย้ายไฟล์เดิม; ไม่ใช้ reset/clean; `yai-ep1` (local) ไม่ถูกแตะ |
+| อธิบายได้ว่าแต่ละการเปลี่ยนแปลงแก้อะไร | ตาราง "ปัญหา → สาเหตุในโค้ด → แก้" ใน §9–§13 |

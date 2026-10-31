@@ -16,7 +16,7 @@ The prompt gives an episode folder (or `examples/rig-lab` for a rig change) and,
 
 ## Workflow
 1. Shot times from `score.js` SHOTS: `node engine/render.js stills <t1+0.6> <t2+0.6> … --draft` from the episode folder (mid-shot, after transitions). For the rig: `stills 0 1 5 8 10 11 16 17` in `examples/rig-lab`.
-2. `node engine/render.js qa` (text safe area, size, overlap, contrast) and, if a final file exists, `pacing`.
+2. `node .agents/skills/tumraikortum/scripts/qa.mjs <episode>` (from the repo root: crashes, missing files, face positions, bible looks, frozen frames — look at its `out/qa/sheet.png`), `node engine/render.js qa` (text safe area, size, overlap, contrast) and, if a final file exists, `pacing`. Don't repeat what they report; look for what they can't measure.
 3. Read each still. Check against `SHOTS` (`shot`, `on`, `look`) and `.agents/skills/tumraikortum/references/directing.md`:
    - the shot size and subject match the row; faces above the subtitle rail (9:16: H·0.70; 16:9: upper ⅔) and out of the platform's top 11.5 %;
    - expressions read at phone size and match the line (angry looks angry, not worried); no frozen character in a held shot;

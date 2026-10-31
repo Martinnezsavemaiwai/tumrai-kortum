@@ -1,0 +1,11 @@
+{
+  "name": "dialogue-demo",
+  "private": true,
+  "description": "QA target: a 4-shot dialogue (picture only, no song.js): bible cast, Direct camera, R.act acting.",
+  "scripts": {
+    "board": "node engine/render.js board",
+    "sheet": "node engine/render.js sheet",
+    "video": "node engine/render.js video",
+    "qa": "node ../../.agents/skills/tumraikortum/scripts/qa.mjs ."
+  }
+}

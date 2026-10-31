@@ -400,6 +400,13 @@
     ctx.save(); ctx.translate(o.x, o.y);
     if (o.shadow !== false && body !== 'puppet') { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 0, 150 * (o.s || 1), 22 * (o.s || 1), 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
     ctx.scale((o.s || 1) * (o.sx || 1), (o.s || 1) * (o.sy || 1));
+    // QA (scripts/qa.mjs sets R.faces = [] before a frame): where this face lands on the canvas, camera included
+    if (Array.isArray(globalThis.R.faces) && body !== 'puppet') {
+      const hry = B.head[1], hy = -(B.thigh + B.shin) - B.foot * 0.3 - B.torso - B.neck - hry * 0.92, m = ctx.getTransform();
+      const P = (y) => { const q = m.transformPoint({ x: 0, y }); return [q.x, q.y]; };
+      globalThis.R.faces.push({ who: typeof o.who === 'string' ? o.who : null, name: c.name || null, look: { ...c, body }, alpha: ctx.globalAlpha,
+        eye: P(hy + hry * ({ chibi: 0.12, cartoon: -0.12 }[body] ?? 0.2)), chin: P(hy + hry), top: P(hy - hry * 1.12) });
+    }
     if (body === 'puppet') puppet(ctx, o, c, B, seed); else front(ctx, o, c, B, body, seed);
     ctx.restore();
   }
