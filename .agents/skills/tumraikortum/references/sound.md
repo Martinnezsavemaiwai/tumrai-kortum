@@ -8,7 +8,7 @@
 - Different characters → different voice IDs: put a `VOICE` map in `score.js` and give each `SHOTS` row a `voice`; `tts.py` sends it per line (`ELEVENLABS_VOICE_ID` / George for the narrator).
 - Free plan works with the current **default** voices, e.g. George `JBFqnCBsd6RMkjVDRZzb` (narrator), Sarah `EXAVITQu4vr4xnSDxMaL` (young woman), Liam `TX3LPaxmHKxFdv7VOQHJ` (young man), Laura `FGY2WhTYpPnrIDTdsKH5`, Charlie `IKne3meq5aSn9XLyUdCD`, Callum `N2lVS1w4EtoT3dr4eOWO`, Lily `pFZP5JQG7iQjIQuC4Bku`, Brian `nPczCjzI2devNBz1zQrb`. Older names like Rachel/Adam are now Library voices → HTTP 402 on the free plan.
 - After generating, check every line fits its shot (`duration < shot length − VO_LAG`).
-- Local/open alternative for extra voices: PyThaiTTS + KhanomTan (check the model licence before monetised use). See `docs/research-*.md`.
+- Local/open alternative for extra voices: PyThaiTTS + KhanomTan (check the model licence before monetised use).
 
 ## song.js recipe
 

@@ -1,5 +1,6 @@
 # Thai subtitles
 
+- Other looks: `Kit.subtitles` in `kit/style.js` (9 styles incl. `keyword`: write `*คำสำคัญ*` in the line to box it in yellow; other styles and `tts.py` drop the stars; any font from `setup-fonts.mjs`); words split with `Intl.Segmenter('th')` so pop/karaoke/type work without spaces. Pick per genre (`genres.md`).
 - Font: **Kanit** 700 (Thai lines), 500 (English, labels). `scripts/setup-fonts.mjs` downloads it (SIL OFL) into `assets/fonts/`; load with `Studio.loadFont('Kanit', 'assets/fonts/Kanit-Bold.ttf', 700)` in `init`.
 - Draw with Canvas (`ctx.font = '700 84px Kanit'`, `strokeText` 16 px black then `fillText` white). Chrome shapes Thai correctly.
 - If you ever render subtitles through libass/ASS instead: **Spacing must be 0** in every style, or stacked tone marks (ที่, ตอนที่) disappear; use `shaping=complex`.
