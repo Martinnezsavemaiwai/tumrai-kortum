@@ -1,6 +1,6 @@
 ---
 name: tumraikortum
-description: Make Thai interactive horror shorts for TikTok/Reels/Shorts (9:16) in the TumraiKortum format — POV story where everything is right except one thing, ending on a choice screen; code-drawn paper chibi animation, synthesized SFX, ElevenLabs Thai voiceover, Kanit subtitles. Use when asked to make a new TumraiKortum episode, continue a branch, storyboard in this format, or render/fix one of these videos.
+description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking, หนังตะลุง…). Every frame drawn in canvas code (anime / cartoon / chibi / explainer / shadow-puppet characters, ten drawing styles), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode in this repo.
 ---
 
 This skill is shared with Codex and other agents. The canonical copy lives in
