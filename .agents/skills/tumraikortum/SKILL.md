@@ -18,6 +18,24 @@ A code-only animation pipeline: every frame drawn on a canvas, every sound synth
 
 Full rules: `references/story-format.md`.
 
+## Roles (one owner per artifact)
+
+This skill is the whole pipeline; the role skills hold the detail of one step each, with their input, output and
+validation. Load the one for the step you are on.
+
+| step | owner | writes | checked by |
+|---|---|---|---|
+| 1 story | `narrative-director` | `<ep>/STORY.md` | `continuity-checker` |
+| series facts | `story-memory` — **the only one that edits `stories/`**; canon only via proposals the user approves | `stories/<series>/bible.json` drafts, `proposals/` | `story.mjs check` |
+| 2 storyboard, acting, camera | `storyboard-director` | `STORYBOARD.md`, `SHOTS` camera fields, acting keys | `shots.mjs`, `continuity-checker` |
+| 4 characters | `character-design` | look specs (through `story-memory`), model sheets, `cast.js` | `R.check`, `visual-reviewer` |
+| 9 review | — | — | `visual-reviewer` |
+
+`continuity-checker` and `visual-reviewer` are Claude Code subagents (`.claude/agents/`): they run in a fresh
+context so they judge the work as a viewer, and they only read and render — they never edit source or canon. Run
+them after STORY/STORYBOARD (continuity) and before a full render (visual), and fix what they report. Agents without
+subagents (Codex) follow the same files as checklists in a separate pass.
+
 ## Workflow (do the steps in order; show the user each artifact before the next)
 
 1. **Genre + story** → pick a row from `references/genres.md` (font, sub style, look, music, SFX, transitions; don't repeat the last episode's combo), then `<episode>/STORY.md` with `**แนว:**` on top (logline, the one wrong thing, clue list, choice at the end). For a series, the facts live in `stories/<series>/bible.json`: read `story.mjs context <series> <ep>` first, add the episode's events/facts as drafts, and `story.mjs check` must pass. Never change canon yourself — write a proposal (`references/story-memory.md`).

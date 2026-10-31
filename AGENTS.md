@@ -1,7 +1,12 @@
 # Agent notes
 
 This repo is a code-only animation studio for Thai videos (shorts 9:16 and long 16:9 videos, many genres).
-For any animation work, load the skill at `.agents/skills/tumraikortum/SKILL.md` and follow its workflow.
+For any animation work, load the skill at `.agents/skills/tumraikortum/SKILL.md` and follow its workflow; its
+"Roles" table names the role skill for each step (`story-memory`, `narrative-director`, `storyboard-director`,
+`character-design`) and the read-only reviewers (`.claude/agents/continuity-checker.md`, `visual-reviewer.md`).
+
+- Series facts live in `stories/<series>/bible.json`. Only the `story-memory` steps edit it, as drafts; canon changes
+  are proposals the user approves (`story.mjs approve`). Never run `approve` or `lock` yourself.
 
 - Start a new film by scaffolding: `node .agents/skills/tumraikortum/scripts/new-episode.mjs <from> <new>`,
   where `<from>` is `examples/explainer-demo` (9:16 short), `examples/longform-demo` (16:9 with chapters) or a

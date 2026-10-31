@@ -144,7 +144,7 @@ Render ใช้งานได้จริง: ทดสอบ `render.js still
 | M3 | rig: คิ้ว, เลเยอร์, ทรงผม, cel shading, `R.SPEC/R.check`, `story cast` → `cast.js`, ภาพ before/after | ✅ เสร็จ (ดู §9) |
 | M4 | expression blending, auto blink/breath, secondary motion | ✅ เสร็จ (ดู §10) |
 | M5 | shot list เป็นข้อมูล, shot types, ตรวจ storyboard ↔ score | ✅ เสร็จ (ดู §11) |
-| M6 | skills แยกบทบาท (story-memory, continuity-checker, visual-quality-review) บน CLI จาก M2 | หยุดขออนุมัติก่อน |
+| M6 | skills แยกบทบาท (story-memory, continuity-checker, visual-quality-review) บน CLI จาก M2 | ✅ เสร็จ (ดู §12) |
 | M7 | QA หน้าตัวละคร/safe area, end-to-end test | หยุดขออนุมัติก่อน |
 | — | รวม engine เป็นชุด canonical (P2) | เปลี่ยนโครงสร้าง: ต้องอนุมัติ |
 
@@ -234,3 +234,31 @@ ECU ของ cartoon คางตกใต้ซับ (จัดกลาง�
 - ภาพ: `docs/img/direct-shot-types-9x16.jpg`, `direct-shot-types-16x9.jpg` (rig-lab หน้า 16 s / 17 s)
 
 ข้อจำกัด: ไม่มี "ภาพก่อน" ของระบบนี้ (ก่อนหน้าไม่มีการจัดเฟรมอัตโนมัติ; สิ่งที่เทียบได้คือผล lint บนตอนจริง); two-shot ของตัวละครที่ยืนห่างกันมากแน่นได้แค่ MS และตัวสูง–ตัวเตี้ยต่างกันมากไม่มีเส้นตาร่วม (ระบบถอยเป็นช็อตกว้างกว่าเอง); ยังไม่มีมุมกล้อง (high/low angle, OTS) เพราะ renderer เป็น 2D หน้าตรง; `qa` ของ engine ยังไม่ตรวจตำแหน่งหน้าในเฟรมที่เรนเดอร์จริง (การันตีด้วยการคำนวณ + test แทน)
+
+## 12. ผลของ Milestone 6 — Agent skills และ subagents
+
+ตรวจของเดิมก่อน: มี `tumraikortum` (skill หลักทั้ง pipeline, `.claude/skills/` เป็นตัวชี้ไป `.agents/skills/`), skill บุคคลที่สามที่ติดตั้งในเครื่อง 2 ตัว (gitignored) และไม่มี subagent ของโปรเจกต์
+- ⚠ `captions-overlay` (ของ HyperFrames) สอนว่า "อย่าเว้นพื้นที่ให้ซับ" ซึ่งขัดกับกฎรีโปนี้ (หน้าอยู่เหนือ rail ซับ) — ไม่ได้แตะ (เป็นของในเครื่อง) แต่ไม่ควรใช้กับงานในรีโปนี้
+
+ชุดที่เพิ่ม (เล็กที่สุดที่ยังแยกความรับผิดชอบ, แต่ละอย่างมี Input / Output / Workflow / Validation criteria):
+| ชื่อ | ชนิด | เขียนอะไร | ทำไมแยก |
+|---|---|---|---|
+| `story-memory` | skill | `stories/` (draft + proposal เท่านั้น) | **เจ้าของ bible คนเดียว** — กันหลาย agent แก้ canon แข่งกัน |
+| `narrative-director` | skill | `STORY.md` | อ่าน bible ผ่าน `context` เท่านั้น |
+| `storyboard-director` | skill | `STORYBOARD.md`, SHOTS ส่วนกล้อง, ตารางการแสดง | รวม animation-director ไว้ด้วย: กล้องกับการแสดงต้องตัดตามจังหวะเดียวกัน |
+| `character-design` | skill | spec หน้าตา (ผ่าน story-memory), model sheet, `cast.js` | รวม character-consistency: spec เดียวใน bible + `cast.js` |
+| `continuity-checker` | subagent (อ่านอย่างเดียว) | — (รายงาน) | ต้องการ context ใหม่ อ่านแบบคนดูที่จำทุกตอน ไม่ใช่คนเขียน |
+| `visual-reviewer` | subagent (อ่าน + render ใน `out/`) | — (รายงาน + ภาพ) | ดูภาพจริง ไม่ใช่ดูโค้ดของตัวเอง |
+
+ไม่สร้างแยก: animation-director, character-consistency, visual-quality-review (ซ้ำกับข้างบน) — ลดจุดที่ข้อมูลเดียวกันถูกเขียนสองที่
+- `tumraikortum/SKILL.md` มีตาราง Roles (ขั้นไหน ใครเป็นเจ้าของ เขียนอะไร ใครตรวจ); `AGENTS.md` ระบุกฎ canon
+- Codex/agent อื่นที่ไม่มี subagent: ใช้ไฟล์ใน `.claude/agents/` เป็น checklist ในรอบแยก
+- Claude Code โหลด skill ใหม่ทั้ง 4 ทันที (เห็นในรายการ skill ของ session); subagent types โหลดตอนเริ่ม session ใหม่
+
+ทดสอบ:
+- `scripts/skills.test.mjs` 5 ข้อ: frontmatter + 4 หัวข้อ, ตัวชี้ `.claude/skills` ตรงกับต้นฉบับ, subagent ไม่มีเครื่องมือเขียน (Edit/Write) และเขียนกฎ "never edit", มีเจ้าของ bible คนเดียว และ approve/lock เป็นของผู้ใช้, ทุก path ที่ skill อ้างมีอยู่จริง — รวมทั้งหมด 35/35 ผ่าน
+- Dry run ของ `continuity-checker` (agent แยก context, ทำตามไฟล์ `.claude/agents/continuity-checker.md`) บนสำเนา `demo-dorm9` + ep3 ร่างที่ฝังความผิด 4 จุดซึ่งสคริปต์จับไม่ได้ (`story.mjs check` ✓, `shots.mjs` ✓ no errors):
+  พบครบ 4/4 พร้อม id ที่ขัด — ผมยาวทั้งที่ตัดบ๊อบ (e3), ป้าจันทร์โผล่ทั้งที่กลับบ้าน (e5), เฉลยข้อเท็จจริง `unknown` (f4), "ร่มซื้อจากเซเว่น" ขัด canon (f3) —
+  และเจอเพิ่ม 3 ข้อที่ไม่ได้ฝัง (เลขช็อตของ e7/e8 ใน bible ไม่ตรง storyboard, คำสารภาพเฉลยปม t2 ครึ่งๆ, สำนวนพูดไม่ตรง `voice`); ไม่แก้ไฟล์ใด (ตรวจด้วย `cmp`)
+- จาก dry run แก้คำสั่ง 1 จุด: agent บอกว่าแก้ event ของตอน draft "ต้องเขียน proposal" ซึ่งเกินกฎ — เพิ่มว่า draft แก้ตรงผ่าน `story-memory`, เฉพาะ canon ที่ต้อง proposal
+- `visual-reviewer` ยังไม่ได้ dry run (การตรวจภาพแบบเดียวกันทำด้วยมือมาแล้วใน M3–M5)
