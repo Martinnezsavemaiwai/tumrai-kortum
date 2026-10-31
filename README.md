@@ -1,52 +1,71 @@
-# TumraiKortum (ทำไรก็ทำ)
+# TumraiKortum (ทำไรก็ทำ) — an animation studio in code
 
-Thai interactive horror shorts for TikTok, made entirely by code: every frame is drawn on a canvas, sound effects and music are synthesized, the Thai voiceover comes from ElevenLabs, subtitles use Kanit. Each episode ends on a choice, and the next episode follows the viewers' pick.
+Make Thai animated videos with an AI agent, with no drawing app and no stock assets: every frame is drawn on a
+canvas in JavaScript, every sound and note is synthesized, the Thai voiceover comes from ElevenLabs and the
+subtitles are Thai fonts. Short vertical clips (9:16, TikTok / Reels / Shorts) and long YouTube videos (16:9,
+with chapters).
 
-**MVP:** EP1 *ถ้าปาร์ตี้ฮาโลวีนมีคนเกินมาหนึ่งคน* (`halloween-ep1/`).
+What you can make:
+
+- **Genres** — horror "what would you do" stories (the channel's TumraiKortum format), Thai folk ghosts, urban
+  legends, puzzles, comedy, school life / romance, fantasy, sci-fi, sports, cooking, language lessons,
+  bedtime facts, diaries, book-summary explainers, หนังตะลุง comedy… (`.agents/skills/tumraikortum/references/genres.md`)
+- **Characters** — one skeleton (neck, elbows, knees, hands with fingers, 15 poses, acting with anticipation)
+  in five bodies: `anime`, `cartoon`, `chibi`, `explainer`, `puppet` (หนังตะลุง); plus the older paper chibi rig.
+- **Drawing styles** — paper, flat, watercolor, chalk, neon, pixel, ink, woodcut, crayon, manga.
+- **Sound** — drones, strings, music box, lo-fi / chiptune / orchestral / EDM packs, Thai instruments in the
+  Thai 7-tone scale (ระนาด ขิม แคน ปี่ ฉิ่ง กลองทัด ฆ้อง ระฆัง), SFX, mixing to −14 LUFS.
+- **Text** — 9 subtitle styles (incl. keyword highlight, karaoke, glitch, torn paper), 10 Thai OFL fonts.
+- **Long videos** — chapters with title cards and a progress bar, chapter-by-chapter rendering you can resume,
+  SRT/VTT captions and YouTube chapter lines.
 
 ## Use it with an agent
 
-The pipeline is packaged as an [Agent Skill](https://agentskills.io) so Claude Code, Codex and other agents can make episodes the same way:
+The whole workflow is an [Agent Skill](https://agentskills.io), so Claude Code, Codex and other agents work the
+same way:
 
-- Codex / standard agents: `.agents/skills/tumraikortum/SKILL.md`
-- Claude Code: `.claude/skills/tumraikortum/` (points to the same skill)
+- canonical copy: `.agents/skills/tumraikortum/SKILL.md` (workflow, scripts, references, `kit/`)
+- Claude Code: `.claude/skills/tumraikortum/` points to it
+- `AGENTS.md`: the short rules every agent follows here
 
-Ask: *"ทำตอนใหม่ของ TumraiKortum เรื่อง …"* or *"make TumraiKortum EP2 branch A"*.
+Ask in Thai or English, e.g. *"ทำคลิปสั้นแนวตลกชีวิตประจำวัน ตัวละครการ์ตูน"*, *"ทำคลิปยาว 5 นาที สรุปข้อคิด 3 ข้อ"*,
+*"ทำ TumraiKortum ตอนใหม่เรื่อง …"*.
 
 ## Requirements
 
-Node 22+, ffmpeg, Google Chrome, Python 3.10+ (for the voice script). On Windows set `CHROME_PATH` (see `.agents/skills/tumraikortum/references/windows.md`).
+Node 22+, ffmpeg (+ ffprobe), Google Chrome, Python 3.10+ (voice script). Windows: set `CHROME_PATH`
+(`.agents/skills/tumraikortum/references/windows.md`). Voice: `ELEVENLABS_API_KEY=…` in `.env` (never commit it).
 
-## Make the EP1 video yourself
+## Try an example
 
 ```bash
-cd halloween-ep1
-node ../.agents/skills/tumraikortum/scripts/setup-fonts.mjs .
+cd examples/explainer-demo
+node ../../.agents/skills/tumraikortum/scripts/setup-fonts.mjs .
 node song.js
-node engine/render.js video
-node engine/render.js mux
-node engine/render.js verify
+node engine/render.js stills 2.5 14 18.5     # a few frames → out/stills/
+node engine/render.js video && node engine/render.js mux
 ```
 
-The voice lines are not in the repo (ElevenLabs free-plan audio). Put `ELEVENLABS_API_KEY=...` in `.env` (never commit it) and run the TTS script first.
+Long video: `examples/longform-demo` with `node ../../.agents/skills/tumraikortum/scripts/render-long.mjs .`
+
+Start your own: `node .agents/skills/tumraikortum/scripts/new-episode.mjs examples/explainer-demo my-episode`.
 
 ## Layout
 
 | path | what |
 |---|---|
-| `halloween-ep1/` | EP1: `score.js` (timeline), `song.js` (sound), `film.js` (shots), `chibi.js` (characters), `engine/` |
-| `halloween-ep2a/` | EP2 branch A "ถอด" |
-| `halloween-ep3/` | EP3 "เปิด" |
-| `brand/` | channel profile picture (orange-cat mascot) |
-| `.agents/skills/tumraikortum/` | the skill: workflow, references, scripts |
-| `docs/` | research notes (licences, voices, skills) and the season plan |
-| `halloween-script.md` | story bible and scripts for EP1/EP2 |
-| `build_ep1.py`, `sfx.py`, `tts_ep1.py` | the earlier slideshow prototype (kept for reference) |
+| `.agents/skills/tumraikortum/` | the skill: `SKILL.md`, `scripts/` (scaffold, fonts, voice, long render), `kit/` (rig, art styles, subtitles, Thai sound, explainer props, chapters), `references/` |
+| `examples/` | small working films to copy from (original content, code only) |
+| `halloween-ep1/`, `halloween-ep2a/`, `halloween-ep3/` | the channel's season 1 episodes (in progress) |
+| `halloween-script.md` | season 1 story bible |
+| `*/engine/` | the renderer each film carries (canvas + headless Chrome + ffmpeg) |
+
+Renders (`out/`), generated voice (`voice/`) and downloaded fonts (`assets/fonts/`) are not committed.
 
 ## Licence
 
-- **Code** (scripts, the agent skill, drawing/animation/sound code): [MIT](LICENSE).
-- **Content** (stories, characters, the TumraiKortum / ทำไรก็ทำ name, the orange-cat mascot, the videos): **all rights reserved**, see [LICENSE-CONTENT.md](LICENSE-CONTENT.md).
-- Rendering engine in `*/engine/`: from the animation-studio plugin by Afaq Rashid, MIT (see `engine/LICENSE`); patched for Windows.
-- Fonts: Kanit and the engine fonts are SIL Open Font License.
-- ElevenLabs audio generated on the free plan is non-commercial and is not in this repository.
+- **Code** (scripts, the skill, the kit, drawing/animation/sound code, `examples/`): [MIT](LICENSE).
+- **Content** (the TumraiKortum episodes, stories, characters, channel name, videos): **all rights reserved**,
+  see [LICENSE-CONTENT.md](LICENSE-CONTENT.md).
+- Engine in `*/engine/`: the animation-studio engine by Afaq Rashid, MIT (see `engine/LICENSE`); patched here.
+- Fonts: SIL Open Font License. ElevenLabs audio on the free plan is non-commercial and is not in this repo.

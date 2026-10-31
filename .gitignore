@@ -9,11 +9,14 @@ output/
 *.mp4
 *.wav
 
-# --- generated voice (ElevenLabs free plan = non-commercial; rebuild with tts_ep1.py) ---
+# --- generated voice (ElevenLabs free plan = non-commercial; rebuild with scripts/tts.py) ---
 voice/
 
 # --- old AI-generated stills from the slideshow version (not used by the animation) ---
 images/
+
+# --- local-only work (not part of the repo) ---
+yai-ep1/
 
 # --- fonts are downloaded by setup (Kanit, SIL OFL) ---
 /fonts/
