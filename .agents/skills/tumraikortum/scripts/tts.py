@@ -64,18 +64,27 @@ def main():
         sys.exit(__doc__)
     ep = Path(args[0]).resolve()
     lines = shots(ep)
-    if "--dry" in sys.argv:
+    out = ep / "voice"
+    name = lambda s: out / f"{int(round(s['t'])):03d}.mp3"
+    said = lambda s: f"{s['tag']} {s['th'].replace(chr(10), '').replace(chr(34), '').replace('*', '')}".strip()  # *word* = a highlighted keyword on screen only
+    seen = {}
+    for s in lines:  # files are named by the rounded second: two lines in the same second would overwrite each other
+        if name(s).name in seen:
+            sys.exit(f"lines at {seen[name(s).name]}s and {s['t']}s both map to voice/{name(s).name}: move one at least 1 s away")
+        seen[name(s).name] = s["t"]
+    todo = [s for s in lines if not name(s).exists()]
+    if "--dry" in sys.argv:  # also the cost check before a long episode: ElevenLabs bills characters
         for s in lines:
-            print(f"{s['t']:>6}  {s['tag']} {s['th']!r}")
+            print(f"{s['t']:>7}  {'cached ' if name(s).exists() else 'NEW    '}{said(s)!r}")
+        new = sum(len(said(s)) for s in todo)
+        print(f"\n{len(lines)} lines, {sum(len(said(s)) for s in lines)} characters in all; to generate now: {len(todo)} lines, {new} characters"
+              f" (free plan ≈ 10,000 / month)")
         return
     key, voice = load_env(root, ep)
-    out = ep / "voice"
     out.mkdir(exist_ok=True)
-    for s in lines:
-        f = out / f"{int(round(s['t'])):03d}.mp3"
-        if f.exists():
-            continue
-        text = f"{s['tag']} {s['th'].replace(chr(10), '').replace(chr(34), '')}".strip()
+    for s in todo:
+        f = name(s)
+        text = said(s)
         body = {"text": text, "model_id": MODEL, "voice_settings": {"stability": 0.5, "similarity_boost": 0.8}}
         f.write_bytes(call(f"/text-to-speech/{s['voice'] or voice}?output_format=mp3_44100_128", key, body))
         print("ok", f.name, text)
