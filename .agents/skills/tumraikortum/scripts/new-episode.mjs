@@ -19,7 +19,7 @@ fs.cpSync(path.join(import.meta.dirname, '..', 'kit'), path.join(to, 'kit'), { r
 const html = path.join(to, 'index.html');
 let page = fs.readFileSync(html, 'utf8');
 const at = page.includes('<script src="chibi.js">') ? '<script src="chibi.js">' : '<script src="film.js">';
-for (const f of ['kit/art.js', 'kit/rig.js', 'kit/explainer.js', 'kit/style.js']) if (!page.includes(f)) page = page.replace(at, `<script src="${f}"></script>\n${at}`);
+for (const f of ['kit/art.js', 'kit/rig.js', 'kit/direct.js', 'kit/explainer.js', 'kit/style.js']) if (!page.includes(f)) page = page.replace(at, `<script src="${f}"></script>\n${at}`);
 // chapters before score.js: a long episode's score builds its timeline with Chapters.timeline
 if (!page.includes('kit/chapters.js')) page = page.replace('<script src="score.js">', '<script src="kit/chapters.js"></script>\n<script src="score.js">');
 fs.writeFileSync(html, page);

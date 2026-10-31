@@ -1,0 +1,56 @@
+{
+  "series": "demo-dorm9",
+  "title": "หอเลขที่ 9",
+  "genre": "ตลก/ชีวิตประจำวัน · ตัวละคร anime · ตัวอย่างระบบความจำเรื่อง (ไม่ใช่ตอนที่ลงจริง)",
+  "episodes": [
+    { "id": "ep1", "title": "ร่มแดงหาย", "after": null, "status": "canon",
+      "summary": "แพรววางร่มสีแดงของยายไว้หน้าห้อง เช้ามาร่มหาย เหลือโน้ตว่า 'ยืมก่อนนะ' ภูมิห้องข้าง ๆ ทำท่ามีพิรุธ จบด้วยคำถาม: ตามหาร่ม หรือ ปล่อยไป?" },
+    { "id": "ep2a", "title": "สะกดรอย", "after": "ep1", "choice": "ตามหาร่ม", "status": "canon",
+      "summary": "แพรวตัดผมบ๊อบจะได้ไม่มีใครจำได้ แล้วสะกดรอยภูมิ จนเห็นภูมิอัดคลิปรีวิวอาหารในห้อง ป้าจันทร์เจ้าของหอขึ้นรถทัวร์กลับบ้านต่างจังหวัด" },
+    { "id": "ep2b", "title": "ปล่อยไป", "after": "ep1", "choice": "ปล่อยไป", "status": "draft",
+      "summary": "แพรวปล่อยเรื่องร่ม ภูมิชวนไปกินข้าวที่ตลาดโต้รุ่งแล้วยืนยันว่าแค่ชอบกิน ไม่ได้ทำเพจอะไร" },
+    { "id": "ep3", "title": "ข้าวมันไก่ไถ่โทษ", "after": "ep2a", "status": "draft",
+      "summary": "แพรวใช้ความลับเรื่องเพจต่อรองให้ภูมิช่วยหาร่ม สุดท้ายร่มกลับมาหน้าห้องพร้อมกล่องข้าวมันไก่" }
+  ],
+  "characters": {
+    "praew": { "name": "แพรว", "status": "canon", "body": "anime", "role": "นักศึกษาปีหนึ่ง ห้อง 304",
+      "traits": ["ดื้อเงียบ", "ช่างสังเกต", "ไม่ยอมแพ้เรื่องเล็ก ๆ"], "voice": "พูดสั้น ห้วน ลงท้าย 'อะ'",
+      "look": { "skin": "#F6D7C3", "hair": "#3A2A3E", "hairStyle": "long", "eye": "#7A4A9E", "top": "#F2F2F2", "collar": "#2E4A7A", "bottom": "#2E4A7A", "bottomStyle": "skirt", "shoes": "#3A3030", "tie": "#C83C4A" } },
+    "phum": { "name": "ภูมิ", "status": "canon", "body": "anime", "role": "รุ่นพี่ห้อง 305",
+      "traits": ["เนียน", "ตะกละ", "ใจดีแต่ขี้อาย"], "voice": "พูดช้า ชอบเปรียบเทียบกับอาหาร",
+      "look": { "skin": "#E9C2A2", "hair": "#1E1A22", "hairStyle": "spiky", "eye": "#3A6EA5", "top": "#3A6EA5", "bottom": "#2B2E3A", "bottomStyle": "pants", "shoes": "#F2F2F2", "glasses": "#2A2230" },
+      "knows": [{ "fact": "f2" }] },
+    "jan": { "name": "ป้าจันทร์", "status": "canon", "body": "anime", "role": "เจ้าของหอ",
+      "traits": ["ปากร้ายใจดี", "รู้ทุกเรื่องในหอ"], "voice": "เสียงดัง เรียกทุกคนว่า 'ลูก'",
+      "look": { "skin": "#D9A882", "hair": "#D8D4CC", "hairStyle": "bob", "eye": "#4A3A2A", "top": "#7A9A5A", "bottom": "#4A3E34", "bottomStyle": "skirt", "shoes": "#3A3030", "old": true } }
+  },
+  "facts": [
+    { "id": "f1", "status": "canon", "about": [], "text": "หอเลขที่ 9 อยู่ซอยข้างตลาดโต้รุ่ง ห้ามทำอาหารในห้อง" },
+    { "id": "f2", "status": "canon", "about": ["phum"], "secret": true, "text": "ภูมิคือเจ้าของเพจรีวิวอาหาร 'นักชิมไร้หน้า'" },
+    { "id": "f3", "status": "canon", "about": ["praew"], "text": "ร่มสีแดงของแพรวเป็นของขวัญจากยาย" },
+    { "id": "f4", "status": "unknown", "about": [], "text": "ใครเป็นคนเอาร่มแดงไป" },
+    { "id": "f5", "status": "draft", "about": ["jan"], "text": "ป้าจันทร์เคยเป็นแม่ครัวโรงแรม" }
+  ],
+  "events": [
+    { "id": "e1", "ep": "ep1", "shot": 3, "who": ["praew"], "text": "แพรวกางร่มแดงตากไว้หน้าห้อง 304" },
+    { "id": "e2", "ep": "ep1", "shot": 12, "who": ["praew", "phum"], "text": "เช้ามาร่มหาย เหลือโน้ต 'ยืมก่อนนะ' ภูมิเดินผ่านแล้วหลบตา" },
+    { "id": "e3", "ep": "ep2a", "shot": 2, "who": ["praew"], "text": "แพรวตัดผมบ๊อบเองหน้ากระจก", "set": { "praew": { "look": { "hairStyle": "bob" } } } },
+    { "id": "e4", "ep": "ep2a", "shot": 9, "who": ["praew", "phum"], "text": "แพรวแอบเห็นภูมิอัดคลิปรีวิวในห้อง", "learn": [{ "who": "praew", "fact": "f2" }] },
+    { "id": "e5", "ep": "ep2a", "shot": 14, "who": ["jan"], "text": "ป้าจันทร์ขึ้นรถทัวร์กลับต่างจังหวัด", "set": { "jan": { "present": false } } },
+    { "id": "e6", "ep": "ep2b", "shot": 5, "who": ["praew", "phum"], "text": "ภูมิยืนยันว่าแค่ชอบกิน ไม่ได้ทำเพจ แพรวเชื่อ", "learn": [{ "who": "praew", "fact": "f2", "belief": "false" }] },
+    { "id": "e7", "ep": "ep3", "shot": 4, "who": ["praew", "phum"], "text": "แพรวขู่ว่าจะบอกทั้งหอเรื่องเพจ ถ้าภูมิไม่ช่วยหาร่ม", "uses": [{ "who": "praew", "fact": "f2" }] },
+    { "id": "e8", "ep": "ep3", "shot": 18, "who": ["praew"], "text": "ร่มแดงกลับมาหน้าห้องพร้อมกล่องข้าวมันไก่" }
+  ],
+  "threads": [
+    { "id": "t1", "plant": "e2", "payoff": "e8", "text": "ร่มแดงหาย ใครเอาไปและจะกลับมาไหม" },
+    { "id": "t2", "plant": "e2", "payoff": null, "text": "โน้ต 'ยืมก่อนนะ' เป็นลายมือใคร" }
+  ],
+  "tests": [
+    { "id": "hair-cut-stays", "ep": "ep3", "expect": { "praew.look.hairStyle": "bob" }, "why": "แพรวตัดผมใน ep2a ทุกตอนหลังจากนั้นต้องผมบ๊อบ" },
+    { "id": "hair-branch-b", "ep": "ep2b", "expect": { "praew.look.hairStyle": "long" }, "why": "สาย B ไม่ได้ตัดผม" },
+    { "id": "jan-away", "ep": "ep3", "expect": { "jan.present": false }, "why": "ป้าจันทร์กลับบ้านตั้งแต่ ep2a" },
+    { "id": "secret-a", "ep": "ep2a", "after": "e4", "expect": { "praew.knows.f2": "true" } },
+    { "id": "secret-b", "ep": "ep2b", "expect": { "praew.knows.f2": "false" }, "why": "สาย B แพรวเชื่อคำโกหกของภูมิ" },
+    { "id": "secret-before", "ep": "ep1", "expect": { "praew.knows.f2": "none", "phum.knows.f2": "true" } }
+  ]
+}

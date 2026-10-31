@@ -1,0 +1,18 @@
+{
+  "approved": "2026-10-31",
+  "items": {
+    "episodes/ep1": "5868b2ea06f38590",
+    "episodes/ep2a": "8cc3d9320f493d21",
+    "characters/praew": "9e05ce1740b8a016",
+    "characters/phum": "8abe1a4cadd857c2",
+    "characters/jan": "6285c3b9d33e5393",
+    "facts/f1": "55d1876ff31ec20a",
+    "facts/f2": "e45c3cb120f7bcc2",
+    "facts/f3": "f66dd1da4e871530",
+    "events/e1": "aed5b72140c3c1e0",
+    "events/e2": "feaf4a720f1222f9",
+    "events/e3": "215dafbf90f54837",
+    "events/e4": "23dd80f00b5f8e90",
+    "events/e5": "d90f08f1c75b576e"
+  }
+}

@@ -25,6 +25,18 @@
   const soft = (ctx, pts, color, k = 0.22) => { ctx.save(); ctx.beginPath(); G.path(ctx, pts, true); ctx.clip(); const [x0, y0, x1, y1] = G.bbox(pts), w = x1 - x0, h = y1 - y0; const g = ctx.createLinearGradient(x0 + w * 0.35, y0 + h * 0.2, x1, y1); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(40,20,60,${k})`); ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h); ctx.restore(); };
   // a smooth closed outline through control points (for hair locks, profiles)
   const curvy = (pts) => { const out = []; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; for (let k = 0; k < 4; k++) out.push([a[0] + (b[0] - a[0]) * k / 4, a[1] + (b[1] - a[1]) * k / 4]); } return out; };
+  // a smooth closed outline (Catmull-Rom) through control points given in head units: x·rx, y·ry from the head centre
+  const spline = (ctrl, hx, hy, rx, ry, n = 6) => {
+    const P = ctrl.map(([u, v]) => [hx + u * rx, hy + v * ry]), out = [];
+    for (let i = 0; i < P.length; i++) {
+      const p0 = P[(i - 1 + P.length) % P.length], p1 = P[i], p2 = P[(i + 1) % P.length], p3 = P[(i + 2) % P.length];
+      for (let k = 0; k < n; k++) { const t = k / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map((j) => 0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3))); }
+    }
+    return out;
+  };
+  const mirror = (ctrl) => ctrl.map(([u, v]) => [-u, v]).reverse();
+  // one light from the top left: how strong the far-side shadow is per body (puppets are lit from behind)
+  const SHADE = { anime: 0.16, chibi: 0.14, cartoon: 0.1, explainer: 0.28 };
 
   // ---------- proportions (units: the figure is 1000 tall at s = 1) ----------
   const BODY = {
@@ -46,6 +58,28 @@
     prince: { name: 'พระเอก', skin: '#3A6A4A', top: '#C8963C', bottom: '#A8402E', crown: true, nose: 'straight' },
     teng: { name: 'อ้ายเท่ง', skin: '#2A1E1A', top: '#8A5A3A', bottom: '#5A3A2A', belly: true, nose: 'hook', hairStyle: 'tuft' },
   };
+
+  // ---------- character spec: every field a `who` object may have (story.mjs validates bible looks with R.check) ----------
+  const SPEC = {
+    body: Object.keys(BODY),
+    colors: ['skin', 'hair', 'eye', 'top', 'collar', 'bottom', 'shoes', 'tie', 'jacket', 'glasses', 'accent'],
+    hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft'],
+    bottomStyle: ['skirt', 'pants'],
+    nose: ['straight', 'hook'],
+    flags: ['old', 'crown', 'belly'],
+    text: ['name'],
+  };
+  function check(who) {
+    const out = [];
+    for (const [k, v] of Object.entries(who || {})) {
+      if (SPEC.colors.includes(k)) { if (!/^#[0-9a-fA-F]{6}$/.test(String(v))) out.push(`${k}: "${v}" is not a #rrggbb colour`); }
+      else if (Array.isArray(SPEC[k])) { if (!SPEC[k].includes(v)) out.push(`${k}: "${v}" is not one of ${SPEC[k].join(' ')}`); }
+      else if (SPEC.flags.includes(k)) { if (typeof v !== 'boolean') out.push(`${k}: must be true/false`); }
+      else if (!SPEC.text.includes(k)) out.push(`${k}: unknown field (have ${[...SPEC.colors, 'body', 'hairStyle', 'bottomStyle', 'nose', ...SPEC.flags, 'name'].join(' ')})`);
+    }
+    if (who && who.body !== 'puppet' && !who.skin) out.push('skin: missing');
+    return out;
+  }
 
   // ---------- hands: fingers point along the forearm; side −1 = screen-left hand ----------
   function hand(ctx, x, y, ang, side, kind, size, skin, body, seed) {
@@ -100,8 +134,11 @@
     ctx.restore();
     // upper lash line, thick, flicked at the outer corner; thin lower lash
     const lid = top < 1 ? cy - h + 2 * h * (1 - top) * 0.9 : cy - h;
-    const tilt = e === 'angry' ? side * -7 : e === 'sad' ? side * 6 : 0;
-    G.line(ctx, [[cx - side * w - 2, lid + 4 + tilt], [cx, lid - 2], [cx + side * w + 4, lid + 3 - tilt], [cx + side * (w + 10), lid - 3 - tilt]], { color: INK, lw: 5, seed: seed + 1, amp: 0.4 });
+    const tilt = e === 'angry' ? 7 : e === 'sad' ? -6 : 0; // + = inner corner down (the points below are already mirrored by side)
+    const lash = top < 1 // a lid cut across the eye stays straight; an open eye's lash follows the eye's curve (a flat bar reads as glasses)
+      ? [[cx - side * w - 2, lid + 4 + tilt], [cx, lid - 2], [cx + side * w + 4, lid + 3 - tilt], [cx + side * (w + 10), lid - 3 - tilt]]
+      : [[cx - side * w * 0.95, cy - h * 0.3 + tilt], [cx - side * w * 0.55, cy - h * 0.86 + tilt * 0.5], [cx, lid - 1], [cx + side * w * 0.6, cy - h * 0.84], [cx + side * w * 1.02, cy - h * 0.32 - tilt], [cx + side * (w + 9), cy - h * 0.62 - tilt]];
+    G.line(ctx, lash, { color: INK, lw: 5, seed: seed + 1, amp: 0.4 });
     G.line(ctx, [[cx - side * 8, cy + h - 1], [cx + side * w * 0.8, cy + h - 3]], { color: INK, lw: 2, seed: seed + 2, amp: 0.3 });
   }
   function dotEye(ctx, cx, cy, side, o, c, seed, r) { // chibi: big dark glossy ovals
@@ -112,7 +149,7 @@
     ctx.fillStyle = INK; ctx.beginPath(); ctx.ellipse(cx + lx, cy, r * 0.8, r * blink * (e === 'sly' ? 0.5 : 1), 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = c.eye || '#6A4A8A'; ctx.beginPath(); ctx.ellipse(cx + lx, cy + r * 0.35 * blink, r * 0.55, r * 0.4 * blink, 0, 0, Math.PI * 2); ctx.fill();
     dot(ctx, cx + lx - r * 0.3, cy - r * 0.4 * blink, r * 0.3, '#FFFFFF'); dot(ctx, cx + lx + r * 0.3, cy + r * 0.2 * blink, r * 0.12, '#FFFFFF');
-    if (e === 'angry' || e === 'sad') G.line(ctx, [[cx - r, cy - r * 1.3 + (e === 'angry' ? -side : side) * 8], [cx + r, cy - r * 1.3 - (e === 'angry' ? -side : side) * 8]], { color: INK, lw: 5, seed: seed + 3 });
+    if (e === 'angry' || e === 'sad') { const k = e === 'angry' ? 1 : -1; G.line(ctx, [[cx - side * r, cy - r * 1.3 + k * 8], [cx + side * r, cy - r * 1.3 - k * 8]], { color: INK, lw: 5, seed: seed + 3 }); } // angry: inner end down; sad: inner end up
   }
   function cartoonEye(ctx, cx, cy, side, o, seed) { // tall white ovals, pupils that touch
     const e = o.eyes || 'normal', blink = o.blink ? Math.max(0.08, 1 - o.blink) : 1;
@@ -121,8 +158,9 @@
     ell(ctx, cx, cy, 30 * big, 44 * big * blink, '#FFFFFF', seed, { lw: 5 });
     const lx = (o.look || 0) * 12 - side * 8, ly = (o.lookY || 0) * 12 + 8;
     if (blink > 0.4) ell(ctx, cx + lx, cy + ly, e === 'shock' ? 6 : 12, e === 'shock' ? 8 : 18, INK, seed + 1, { lw: 0 });
-    if (e === 'angry' || e === 'sly') { ctx.fillStyle = 'rgba(0,0,0,0)'; G.line(ctx, [[cx - side * 30, cy - 40 + (e === 'angry' ? -10 : 18)], [cx + side * 32, cy - 22 + (e === 'angry' ? 14 : 18)]], { color: INK, lw: 8, seed: seed + 2 }); }
-    if (e === 'sad') G.line(ctx, [[cx - side * 30, cy - 46], [cx + side * 30, cy - 60]], { color: INK, lw: 6, seed: seed + 3 });
+    if (e === 'angry') G.line(ctx, [[cx - side * 30, cy - 34], [cx + side * 32, cy - 54]], { color: INK, lw: 8, seed: seed + 2 }); // inner end down
+    if (e === 'sly') G.line(ctx, [[cx - side * 30, cy - 22], [cx + side * 32, cy - 4]], { color: INK, lw: 8, seed: seed + 2 }); // heavy lid
+    if (e === 'sad') G.line(ctx, [[cx - side * 30, cy - 60], [cx + side * 30, cy - 46]], { color: INK, lw: 6, seed: seed + 3 }); // inner end up
   }
 
   function mouth(ctx, x, y, w, o, seed, c) {
@@ -143,10 +181,24 @@
   }
 
   // ---------- hair (front view) ----------
-  function hairBack(ctx, c, hx, hy, rx, ry, seed) {
-    if (!c.hair || c.hairStyle === 'bald' || c.hairStyle === 'spiky') return;
-    if (c.hairStyle === 'long') poly(ctx, [[hx - rx * 1.15, hy - ry * 0.2], [hx - rx * 1.3, hy + ry * 2.6], [hx, hy + ry * 2.4], [hx + rx * 1.3, hy + ry * 2.6], [hx + rx * 1.15, hy - ry * 0.2]], c.hair, seed);
-    if (c.hairStyle === 'twintail') for (const d of [-1, 1]) poly(ctx, [[hx + d * rx * 0.9, hy - ry * 0.6], [hx + d * rx * 1.7, hy - ry * 0.2], [hx + d * rx * 1.9, hy + ry * 1.6], [hx + d * rx * 1.45, hy + ry * 2.3], [hx + d * rx * 1.3, hy + ry * 0.8], [hx + d * rx * 1.0, hy - ry * 0.1]], c.hair, seed + d);
+  // sway (radians-ish, from R.act): hair lags behind the head, bending more toward the tips (secondary motion)
+  function hairBack(ctx, c, hx, hy, rx, ry, seed, sway = 0) {
+    if (!c.hair || c.hairStyle === 'bald' || c.hairStyle === 'spiky' || c.hairStyle === 'tuft') return;
+    const dark = shade(c.hair, -0.25);
+    const bend = (ctrl) => (sway ? ctrl.map(([u, v]) => [u + sway * Math.pow(Math.max(0, v + 0.5), 1.3) * 0.3, v]) : ctrl);
+    const S = (ctrl) => spline(bend(ctrl), hx, hy, rx, ry);
+    // long: flows past the shoulders and ends in soft points, a darker underside behind
+    if (c.hairStyle === 'long') {
+      const half = [[1.1, -0.35], [1.32, 0.7], [1.42, 1.8], [1.22, 2.62], [0.92, 2.38], [0.58, 2.66], [0.2, 2.42]];
+      sh(ctx, S([...mirror(half), ...half]), c.hair, seed, { lw: 4 });
+      ctx.save(); ctx.globalAlpha = 0.5; sh(ctx, S([[-0.8, 0.6], [-0.95, 2.1], [0, 2.2], [0.95, 2.1], [0.8, 0.6]]), dark, seed + 5, { lw: 0 }); ctx.restore();
+    }
+    // bob: a rounded helmet that ends at the jaw, a little flick out at the tips
+    if (c.hairStyle === 'bob') sh(ctx, S([[-1.16, -0.3], [-1.3, 0.55], [-1.22, 1.08], [-0.85, 1.0], [0, 0.9], [0.85, 1.0], [1.22, 1.08], [1.3, 0.55], [1.16, -0.3]]), c.hair, seed, { lw: 4 });
+    // tails taper to a point and curl outward
+    const tail = (d, ctrl) => sh(ctx, S(d > 0 ? ctrl : mirror(ctrl)), c.hair, seed + d, { lw: 4 });
+    if (c.hairStyle === 'twintail') for (const d of [-1, 1]) tail(d, [[0.85, -0.65], [1.5, -0.55], [1.92, 0.2], [1.95, 1.3], [1.7, 2.2], [1.85, 2.75], [1.4, 2.25], [1.32, 1.2], [1.05, 0.1]]);
+    if (c.hairStyle === 'ponytail') tail(1, [[0.55, -0.95], [1.3, -0.85], [1.62, 0.1], [1.6, 1.3], [1.32, 2.1], [1.42, 2.55], [1.06, 2.0], [1.12, 0.9], [0.9, -0.1]]);
     ell(ctx, hx, hy - ry * 0.1, rx * 1.12, ry * 1.08, c.hair, seed + 3);
   }
   function hairFront(ctx, c, hx, hy, rx, ry, seed, body) {
@@ -161,12 +213,17 @@
       if (i > 0) cap.push([x0 - rx * 0.2, brow - ry * 0.12]);
     }
     sh(ctx, cap, c.hair, seed);
-    // side locks framing the face
-    if (c.hairStyle !== 'spiky') for (const d of [-1, 1]) poly(ctx, [[hx + d * rx * 0.98, hy - ry * 0.35], [hx + d * rx * 1.12, hy + ry * 0.75], [hx + d * rx * 0.86, hy + ry * 0.35]], c.hair, seed + 4 + d);
+    // side locks framing the face: tapered curves, down to the jaw for long hair and bobs
+    const lock = { long: 0.95, bob: 1.02, twintail: 0.7, ponytail: 0.6 }[c.hairStyle] ?? 0.55;
+    if (c.hairStyle !== 'spiky') for (const d of [-1, 1]) {
+      const ctrl = [[0.9, -0.45], [1.14, 0.1], [1.12, lock * 0.7], [1.0, lock], [0.94, lock * 0.55], [0.86, 0.05]];
+      sh(ctx, spline(d > 0 ? ctrl : mirror(ctrl), hx, hy, rx, ry, 4), c.hair, seed + 4 + d, { lw: 3 });
+    }
+    if (c.hairStyle === 'ponytail') ell(ctx, hx + rx * 0.62, hy - ry * 0.9, 14, 12, c.accent || '#E8506A', seed + 33, { lw: 3 }); // the hair tie
     if (c.hairStyle === 'spiky') for (let k = 0; k < 5; k++) { const a = Math.PI * (1.1 + k * 0.2); poly(ctx, [[hx + Math.cos(a - 0.12) * rx, hy + Math.sin(a - 0.12) * ry], [hx + Math.cos(a) * rx * 1.45, hy + Math.sin(a) * ry * 1.4], [hx + Math.cos(a + 0.12) * rx, hy + Math.sin(a + 0.12) * ry]], c.hair, seed + 10 + k); }
     // shine band
     ctx.save(); ctx.globalAlpha = 0.35; G.line(ctx, [[hx - rx * 0.6, hy - ry * 0.72], [hx - rx * 0.1, hy - ry * 0.86], [hx + rx * 0.4, hy - ry * 0.78]], { color: shade(c.hair, 0.6), lw: 8, seed: seed + 20 }); ctx.restore();
-    if (c.hairStyle === 'twintail') for (const d of [-1, 1]) ell(ctx, hx + d * rx * 1.02, hy - ry * 0.55, 12, 12, '#E8506A', seed + 30 + d, { lw: 3 });
+    if (c.hairStyle === 'twintail') for (const d of [-1, 1]) ell(ctx, hx + d * rx * 1.02, hy - ry * 0.55, 12, 12, c.accent || '#E8506A', seed + 30 + d, { lw: 3 });
   }
 
   // ---------- marks ----------
@@ -205,17 +262,21 @@
 
     // upper body leans and bobs around the hips
     ctx.save(); ctx.translate(0, hipY + bob); ctx.rotate(p.lean); ctx.translate(0, -hipY);
-    hairBack(ctx, c, 0, hy, hrx, hry, seed + 1);
+    // back hair turns with the head (it used to stay upright while the face tilted), then lags by p.sway
+    ctx.save(); ctx.translate(0, neckTop); ctx.rotate(p.tilt); ctx.translate(0, -neckTop);
+    hairBack(ctx, c, 0, hy, hrx, hry, seed + 1, p.sway || 0);
+    ctx.restore();
     // torso: shoulders → waist → hips, skirt over the hips
     const waistY = sy + B.torso * 0.62;
     poly(ctx, [[-B.sw, sy + 8], [-B.sw * 0.6, sy - 6], [B.sw * 0.6, sy - 6], [B.sw, sy + 8], [B.ww, waistY], [B.hw, hipY + 10], [-B.hw, hipY + 10], [-B.ww, waistY]], c.top || '#6A8AB0', seed + 2, { hatch: true });
-    if (body === 'explainer') { soft(ctx, [[-B.sw, sy + 8], [B.sw, sy + 8], [B.hw, hipY + 10], [-B.hw, hipY + 10]], c.top, 0.28); if (c.jacket) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.25, sy - 4], [d * B.sw, sy + 8], [d * B.hw, hipY + 10], [d * B.hw * 0.3, hipY + 10]], c.jacket, seed + 5 + d); }
+    soft(ctx, [[-B.sw, sy + 8], [B.sw, sy + 8], [B.hw, hipY + 10], [-B.hw, hipY + 10]], c.top, SHADE[body]);
+    if (body === 'explainer') { if (c.jacket) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.25, sy - 4], [d * B.sw, sy + 8], [d * B.hw, hipY + 10], [d * B.hw * 0.3, hipY + 10]], c.jacket, seed + 5 + d); }
     if (c.bottomStyle === 'skirt') poly(ctx, [[-B.ww * 1.02, waistY], [B.ww * 1.02, waistY], [B.hw * 1.6, hipY + B.thigh * 0.55], [-B.hw * 1.6, hipY + B.thigh * 0.55]], c.bottom, seed + 3, { hatch: true });
     else if (c.bottom) poly(ctx, [[-B.ww, waistY], [B.ww, waistY], [B.hw, hipY + 16], [-B.hw, hipY + 16]], c.bottom, seed + 3);
     if (c.collar) for (const d of [-1, 1]) poly(ctx, [[0, sy + 30], [d * B.sw * 0.55, sy - 4], [d * B.sw * 0.75, sy + 34], [d * 8, sy + 50]], c.collar, seed + 4 + d);
     if (c.tie) poly(ctx, [[-10, sy + 40], [10, sy + 40], [16, sy + 90], [0, sy + 104], [-16, sy + 90]], c.tie, seed + 7);
     // neck
-    sh(ctx, G.rrPts(-B.limb * 0.55, neckTop - 8, B.limb * 1.1, B.neck + 22, 8), shade(c.skin, -0.06), seed + 8, { lw: 3 });
+    sh(ctx, G.rrPts(-B.limb * 0.55, neckTop - 8, B.limb * 1.1, B.neck + 22, 8), shade(c.skin, -0.12), seed + 8, { lw: 3 }); // in the head's shadow
 
     // head (tilts round the neck)
     ctx.save(); ctx.translate(0, neckTop); ctx.rotate(p.tilt); ctx.translate(0, -neckTop);
@@ -224,7 +285,11 @@
       ? [...Array(25)].map((_, i) => { const a = Math.PI * 2 * i / 24; const yy = Math.sin(a); return [Math.cos(a) * hrx * (yy > 0 ? 1 - 0.32 * yy * yy : 1), hy + yy * hry * (yy > 0 ? 1.12 : 1)]; }) // pointed chin
       : G.ellPts(0, hy, hrx, hry);
     sh(ctx, face, c.skin, seed + 11);
-    if (body === 'explainer') soft(ctx, face, c.skin);
+    soft(ctx, face, c.skin, body === 'explainer' ? 0.22 : SHADE[body]);
+    if (c.hair && c.hairStyle !== 'bald') { // the fringe casts a soft shadow on the forehead
+      ctx.save(); ctx.beginPath(); G.path(ctx, face, true); ctx.clip();
+      ctx.fillStyle = 'rgba(110,50,70,0.1)'; ctx.beginPath(); ctx.ellipse(0, hy - hry * 0.34, hrx * 1.1, hry * 0.36, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
     if (body === 'anime') for (const d of [-1, 1]) ell(ctx, d * hrx * 0.98, hy + 6, 8, 14, c.skin, seed + 12 + d, { lw: 3 });
     // eyes, brows, nose, mouth
     const ey = hy + hry * (body === 'chibi' ? 0.12 : body === 'cartoon' ? -0.12 : 0.2), ex = hrx * (body === 'chibi' ? 0.42 : body === 'cartoon' ? 0.24 : body === 'explainer' ? 0.38 : 0.44);
@@ -233,13 +298,17 @@
       else if (body === 'cartoon') cartoonEye(ctx, d * ex, ey, d, p, seed + 20 + d);
       else dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * (body === 'explainer' ? 0.12 : 0.17));
       if (c.glasses && body !== 'puppet') { const gr = hrx * 0.24; ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
-      if (body === 'anime' && p.eyes !== 'happy') { const tilt = p.eyes === 'angry' ? -8 : p.eyes === 'sad' || p.eyes === 'shock' ? 7 : 0; G.line(ctx, [[d * ex * 0.55, ey - 30 + tilt], [d * ex * 1.25, ey - 34 - tilt * 0.3]], { color: shade(c.hair || INK, -0.3), lw: 3, seed: seed + 26 + d }); }
     }
     if (body === 'cartoon') { ell(ctx, 0, ey + hry * 0.38, hrx * 0.16, hry * 0.12, shade(c.skin, -0.18), seed + 30); mouth(ctx, 0, ey + hry * 0.62, hrx * 0.42, p, seed + 31, c); }
     else if (body === 'anime') { G.line(ctx, [[2, ey + hry * 0.28], [-2, ey + hry * 0.34]], { color: shade(c.skin, -0.35), lw: 3, seed: seed + 32 }); mouth(ctx, 0, ey + hry * 0.5, hrx * 0.16, p, seed + 33, c); ctx.fillStyle = 'rgba(240,120,140,0.25)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.05, ey + hry * 0.32, 16, 6, 0, 0, Math.PI * 2); ctx.fill(); } }
     else { mouth(ctx, 0, ey + hry * 0.42, hrx * 0.12, p, seed + 34, c); ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, 24, 12, 0, 0, Math.PI * 2); ctx.fill(); } }
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.2, ey + 10], [d * ex * 1.5, ey + 2]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
     hairFront(ctx, c, 0, hy, hrx, hry, seed + 40, body);
+    // anime brows sit on top of the fringe (the style draws them through the hair); + tilt = inner end down
+    if (body === 'anime' && p.eyes !== 'happy') for (const d of [-1, 1]) {
+      const tilt = p.eyes === 'angry' ? 9 : p.eyes === 'sad' || p.eyes === 'shock' ? -8 : 0;
+      G.line(ctx, [[d * ex * 0.55, ey - 50 + tilt], [d * ex * 0.92, ey - 56 + tilt * 0.3], [d * ex * 1.22, ey - 51 - tilt * 0.4]], { color: shade(c.hair || INK, -0.35), lw: 3, seed: seed + 26 + d }); // high and short: close to the lash line it reads as glasses
+    }
     marks(ctx, 0, hy, hrx, p.fx, p.t || 0, seed + 60);
     ctx.restore();
 
@@ -323,7 +392,9 @@
   }
 
   function draw(ctx, o) {
-    const body = o.body || 'anime', B = BODY[body], c = typeof o.who === 'string' ? CAST[o.who] : o.who || CAST.mali;
+    const c = typeof o.who === 'string' ? CAST[o.who] : o.who || CAST.mali;
+    if (!c) throw new Error(`unknown character ${o.who}; have ${Object.keys(CAST).join(', ')}`);
+    const body = o.body || c.body || 'anime', B = BODY[body];
     if (!B) throw new Error(`unknown body ${body}; have ${Object.keys(BODY).join(', ')}`);
     const seed = (o.seed || 1) * 1000;
     ctx.save(); ctx.translate(o.x, o.y);
@@ -353,21 +424,87 @@
   };
   const NUM = Object.keys(DEF);
 
-  // act(t, [[t0, 'idle'], [t1, 'wave'], …]) — anticipation (a dip 0.12 s before a change), an outBack move, a hold.
-  // Keys are pose names or objects ({ ...R.POSES.point, look: -1 }). Pose `talking` flaps the mouth.
-  function act(t, keys, { move = 0.35 } = {}) {
+  const sstep = (x) => { x = U.clamp(x); return x * x * (3 - 2 * x); };
+
+  // ---------- idle life: blinks, breathing, small gaze shifts — a pure function of (t, seed) ----------
+  // A blink every ~2–4 s (one per 3.2 s slot, hashed start), 0.16 s shut-and-open, sometimes a double blink.
+  function blinkAt(t, seed) {
+    const slot = 3.2, k = Math.floor(t / slot), pulse = (d) => (d >= 0 && d < 0.16 ? Math.sin(Math.PI * d / 0.16) : 0);
+    let v = 0;
+    for (const j of [k - 1, k]) {
+      const d = t - (j * slot + U.hash(seed, j) * 2.2);
+      v = Math.max(v, pulse(d), U.hash(seed, j, 7) > 0.8 ? pulse(d - 0.28) : 0);
+    }
+    return v;
+  }
+  function idle(t, seed = 0) {
+    const br = Math.sin((t + seed * 0.7) * Math.PI * 2 / 3.6); // one breath per 3.6 s
+    // the eyes jump to a new resting point every 1.9 s (a saccade: 0.1 s), they don't drift
+    const gs = 1.9, gt = t + seed * 0.53, gk = Math.floor(gt / gs), to = (k) => (U.hash(seed, k, 2) - 0.5) * 0.5;
+    const look = U.lerp(to(gk - 1), to(gk), U.ease.outQuad(U.clamp((gt - gk * gs) / 0.1)));
+    return { blink: blinkAt(t, seed), bob: br * 3, sy: 1 + br * 0.005, lean: U.noise1(t * 0.25, seed + 3) * 0.01, tilt: U.noise1(t * 0.3, seed + 5) * 0.025, look };
+  }
+
+  // ---------- gestures: short additive moves on top of any pose — [duration s, (u 0..1) → deltas] ----------
+  const GESTURES = {
+    jump: [0.8, (u) => (u < 0.18 ? { bob: 30 * Math.sin(u / 0.18 * Math.PI), sy: -0.08 * Math.sin(u / 0.18 * Math.PI) } // crouch
+      : u < 0.7 ? { bob: -150 * Math.sin((u - 0.18) / 0.52 * Math.PI), sy: 0.05 * Math.sin((u - 0.18) / 0.52 * Math.PI) } // air, stretched
+        : { bob: 26 * Math.sin((u - 0.7) / 0.3 * Math.PI), sy: -0.09 * Math.sin((u - 0.7) / 0.3 * Math.PI) })], // land, squashed
+    nod: [0.6, (u) => { const s = Math.sin(u * Math.PI * 2) * (1 - u); return { lookY: s * 0.8, bob: Math.max(0, s) * 8 }; }],
+    shake: [0.8, (u) => { const s = Math.sin(u * Math.PI * 6) * (1 - u); return { look: s * 0.8, tilt: s * 0.04 }; }],
+    shiver: [1.2, (u) => { const env = Math.sin(u * Math.PI); return { lean: Math.sin(u * 70) * 0.012 * env, bob: Math.sin(u * 95) * 2.5 * env }; }],
+  };
+
+  // follow-through: the ends of a chain arrive after its root (seconds behind the shoulders/body)
+  const LAG = { lEl: 0.06, rEl: 0.06, tilt: 0.09, look: 0.05, lookY: 0.05 };
+
+  // act(t, [[t0, 'idle'], [t1, 'wave'], …], { seed, gestures: [[t, 'jump'|'nod'|'shake'|'shiver']], alive })
+  // Keys are pose names or objects ({ ...R.POSES.point, look: -1 }). Each change: anticipation (a dip 0.12 s
+  // before), an outBack move over `move` s with forearms and head trailing (LAG), a hold. Eyes/mouth swap behind
+  // a blink. alive (default): breathing, blinks and gaze shifts from `seed` — give each character its own seed.
+  // Returns pose fields plus `blink` and `sway` (hair lag) for R.draw. Pose `talking` flaps the mouth.
+  function act(t, keys, { move = 0.35, seed = 0, alive = true, gestures = [] } = {}) {
     const P = (k) => (typeof k === 'string' ? POSES[k] : k) || POSES.idle;
-    let i = 0;
-    while (i + 1 < keys.length && t >= keys[i + 1][0]) i++;
-    const cur = P(keys[i][1]), prev = i > 0 ? P(keys[i - 1][1]) : cur;
-    const u = i > 0 ? U.clamp((t - keys[i][0]) / move) : 1, e = U.ease.outBack(u, 1.4);
-    const out = { ...(u < 0.5 ? prev : cur) };
-    delete out.wiggle; delete out.talking;
-    for (const k of NUM) { const a = prev[k] ?? DEF[k], b = cur[k] ?? DEF[k]; out[k] = a + (b - a) * e; }
-    const next = keys[i + 1];
-    if (next) { const v = U.clamp(1 - (next[0] - t) / 0.12); out.sy *= 1 - 0.05 * v; out.sx *= 1 + 0.03 * v; out.bob += 10 * v; }
-    if (cur.wiggle && u >= 1) for (const k in cur.wiggle) out[k] += Math.sin(t * Math.PI * 5) * cur.wiggle[k];
-    if (cur.talking) out.talk = 0.5 + 0.5 * Math.sin(t * 22) * Math.sin(t * 7.3);
+    const at = (tt) => {
+      let i = 0;
+      while (i + 1 < keys.length && tt >= keys[i + 1][0]) i++;
+      const cur = P(keys[i][1]), prev = i > 0 ? P(keys[i - 1][1]) : cur, t0 = keys[i][0];
+      // slow in, overshoot, settle: outBack alone leaves at full speed in the first frame (a visible snap)
+      const u = i > 0 ? U.clamp((tt - t0) / move) : 1, e = U.ease.outBack(sstep(u), 1.4), v = {};
+      for (const k of NUM) { const a = prev[k] ?? DEF[k], b = cur[k] ?? DEF[k]; v[k] = a + (b - a) * e; }
+      // a wiggle fades in after the move and out during the next one: no jump at either end
+      const wig = (pose, amp, from) => { if (pose.wiggle && amp > 0) for (const k in pose.wiggle) v[k] += Math.sin((tt - from) * Math.PI * 5) * pose.wiggle[k] * amp; };
+      wig(cur, i > 0 ? sstep((tt - t0 - move * 0.6) / 0.3) : 1, t0);
+      if (i > 0) wig(prev, 1 - sstep(u * 1.5), keys[i - 1][0]);
+      return { i, cur, prev, u, t0, v };
+    };
+    const pose = (tt) => {
+      const now = at(tt), out = { ...(now.u < 0.5 ? now.prev : now.cur), ...now.v };
+      delete out.wiggle; delete out.talking;
+      for (const k in LAG) out[k] = at(tt - LAG[k]).v[k];
+      // anticipation: a dip that builds over 0.12 s before a key and springs back during the move (it used to snap back)
+      const next = keys[now.i + 1], pre = next ? U.clamp(1 - (next[0] - tt) / 0.12) : 0, post = now.i > 0 ? 1 - sstep((tt - now.t0) / (move * 0.5)) : 0;
+      const a = Math.max(pre, post);
+      out.sy *= 1 - 0.05 * a; out.sx *= 1 + 0.03 * a; out.bob += 10 * a;
+      // the face changes behind a blink, shut exactly when eyes/mouth swap (half-way through the move)
+      out.blink = now.i > 0 && (now.prev.eyes !== now.cur.eyes || now.prev.mouth !== now.cur.mouth) ? 1 - U.clamp(Math.abs(tt - (now.t0 + move * 0.5)) / 0.09) : 0;
+      const flap = 0.5 + 0.5 * Math.sin(tt * 22) * Math.sin(tt * 7.3); // the mouth eases into and out of talking
+      if (now.cur.talking) out.talk = flap * (now.i > 0 ? sstep((tt - now.t0) / 0.12) : 1);
+      else if (now.i > 0 && now.prev.talking) out.talk = flap * (1 - sstep((tt - now.t0) / 0.12));
+      if (alive) { const d = idle(tt, seed); out.blink = Math.max(out.blink, d.blink); out.bob += d.bob; out.sy *= d.sy; out.lean += d.lean; out.tilt += d.tilt; out.look = U.clamp(out.look + d.look, -1, 1); }
+      for (const [g0, name] of gestures) {
+        if (!GESTURES[name]) throw new Error(`unknown gesture ${name}; have ${Object.keys(GESTURES).join(', ')}`);
+        const [dur, f] = GESTURES[name], u = (tt - g0) / dur;
+        if (u >= 0 && u < 1) { const d = f(u); for (const k in d) out[k] += d[k]; }
+      }
+      return out;
+    };
+    const out = pose(t);
+    // secondary motion: hair hangs where the head was over the last 0.25 s
+    const head = (p) => p.lean + p.tilt;
+    let past = 0;
+    for (let k = 1; k <= 5; k++) past += head(pose(t - k * 0.05)) / 5;
+    out.sway = U.clamp((past - head(out)) * 2.5, -0.4, 0.4);
     return out;
   }
 
@@ -377,5 +514,5 @@
     return { lHip: 0.04 + Math.max(0, s) * 0.25, rHip: 0.04 + Math.max(0, -s) * 0.25, lKnee: Math.max(0, s) * 0.6, rKnee: Math.max(0, -s) * 0.6, lSh: 0.12 - s * 0.25, rSh: 0.12 + s * 0.25, bob: -Math.abs(Math.cos(ph)) * 12 };
   };
 
-  globalThis.R = { draw, act, walk, screen, hand, POSES, CAST, BODY, BODIES: Object.keys(BODY) };
+  globalThis.R = { draw, act, idle, walk, screen, hand, check, SPEC, POSES, GESTURES, CAST, BODY, BODIES: Object.keys(BODY) };
 })();
