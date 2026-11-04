@@ -9,6 +9,7 @@ optional ELEVENLABS_VOICE_ID. Never print or commit the key.
     python tts.py --voices             list voices (needs the key's voices_read permission)
 """
 import json
+import math
 import os
 import subprocess
 import sys
@@ -46,8 +47,8 @@ def call(path, key, body=None):
 
 
 def shots(ep):
-    """SHOTS from score.js: [{t, th, tag?, voice?}] for every shot with a Thai line."""
-    js = "const s=require('./score');console.log(JSON.stringify(s.SHOTS.map(x=>({t:x.t,th:x.th,tag:x.tag||'',voice:x.voice||''}))))"
+    """SHOTS from score.js: [{t, th, tag?, voice?, say?}] (say = how to pronounce th when the subtitle has digits/abbreviations) for every shot with a Thai line."""
+    js = "const s=require('./score');console.log(JSON.stringify(s.SHOTS.map(x=>({t:x.t,th:x.th,tag:x.tag||'',voice:x.voice||'',say:x.say||''}))))"
     out = subprocess.run(["node", "-e", js], cwd=ep, capture_output=True, text=True, check=True).stdout
     return [s for s in json.loads(out) if s["th"]]
 
@@ -65,8 +66,9 @@ def main():
     ep = Path(args[0]).resolve()
     lines = shots(ep)
     out = ep / "voice"
-    name = lambda s: out / f"{int(round(s['t'])):03d}.mp3"
-    said = lambda s: f"{s['tag']} {s['th'].replace(chr(10), '').replace(chr(34), '').replace('*', '')}".strip()  # *word* = a highlighted keyword on screen only
+    # half seconds round UP, like JavaScript's Math.round in song.js / shots.mjs / qa.mjs (Python's round(20.5) is 20)
+    name = lambda s: out / f"{math.floor(s['t'] + 0.5):03d}.mp3"
+    said = lambda s: f"{s['tag']} {(s['say'] or s['th']).replace(chr(10), '').replace(chr(34), '').replace('*', '')}".strip()  # *word* = a highlighted keyword on screen only
     seen = {}
     for s in lines:  # files are named by the rounded second: two lines in the same second would overwrite each other
         if name(s).name in seen:

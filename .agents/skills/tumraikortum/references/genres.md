@@ -5,8 +5,8 @@ the top of STORY.md (`**แนว:** ตำนานเมือง · ตัว
 *starting* recipe: change anything, but change it on purpose. Two episodes in a row should not share
 body + font + sub style + music.
 
-- Characters: `kit/rig.js` bodies `anime` · `cartoon` · `chibi` · `explainer` (flat vector, soft shading, glasses) · `puppet` (หนังตะลุง), or the older paper
-  rig in `chibi.js` (`K.chibi`). See `chibi-rig.md`.
+- Characters: `kit/rig.js` bodies `anime` · `cartoon` · `chibi` · `explainer` (flat vector, soft shading, glasses) · `puppet` (หนังตะลุง).
+  See `chibi-rig.md`.
 - Drawing style: engine `paper flat watercolor chalk neon pixel` + `kit/art.js` `ink woodcut crayon manga`
   (`STYLE` in score.js, or `--style` to try one).
 - Fonts: `node scripts/setup-fonts.mjs <ep> <key…>`. Sub styles, glitch, VHS: `kit/style.js`.
@@ -19,12 +19,12 @@ body + font + sub style + music.
 
 | แนว | Hook / format | Body | Font (key) | Sub | Look (`STYLE`, `post`) | Music | SFX | Transitions |
 |---|---|---|---|---|---|---|---|---|
-| **สยองเลือกทาง** (default) | rule in a red box at 0 s, one wrong thing, choice screen | `K.chibi` or `chibi` | `kanit` | `outline`, key lines red | `paper` · vignette 0.45 | `padNote` drone + `strings`; detuning `musicBox` | `subBoom`+`thud`, `heartbeat`, `Thai.wind`, `Thai.whisper` | cut, `irisIn` on hits, `dip` black |
-| **ผีไทยพื้นบ้าน** | "ผู้ใหญ่เล่าว่า…", village at night, "คุณเชื่อไหม?" | `K.chibi` or `puppet` | `charmonman` titles, `kanit` subs | `paper` | `ink` or `paper` · vignette 0.6 | `Thai.khaen` drone, slow `Thai.pi`, `Thai.gong` on hits | `Thai.templeBell`, `Thai.ching`, crickets, `woodTick` | `dip` dark red, `paper` |
+| **สยองเลือกทาง** (default) | rule in a red box at 0 s, one wrong thing, choice screen | `chibi` | `kanit` | `outline`, key lines red | `paper` · vignette 0.45 | `padNote` drone + `strings`; detuning `musicBox` | `subBoom`+`thud`, `heartbeat`, `Thai.wind`, `Thai.whisper` | cut, `irisIn` on hits, `dip` black |
+| **ผีไทยพื้นบ้าน** | "ผู้ใหญ่เล่าว่า…", village at night, "คุณเชื่อไหม?" | `chibi` or `puppet` | `charmonman` titles, `kanit` subs | `paper` | `ink` or `paper` · vignette 0.6 | `Thai.khaen` drone, slow `Thai.pi`, `Thai.gong` on hits | `Thai.templeBell`, `Thai.ching`, crickets, `woodTick` | `dip` dark red, `paper` |
 | **ตำนานเมือง / creepypasta** | found footage: phone/CCTV frame, timestamp | `anime` | `chakra` | `glitch` | `flat` or `manga` · `Kit.vhs` | low `padNote` + detuned `pulse`; silence before hits | `tvClick`, `scratch`, `Thai.whisper`, static | `cut`, `flash`, `Kit.glitch` |
 | **ปริศนาจับผิด** | "หาให้เจอใน 30 วิ" + countdown, answer after the choice | `cartoon` or `anime` | `k2d` | `pop` | `manga` or `flat` | `Genre.play('lofi')` or ticking `marimba` | `ting`, `pop`, `woodTick`, `boing` on wrong | `push`, `zoom` into the clue |
 | **ข่าว / คดี (แต่งขึ้น)** | news lower-third, "เหตุเกิดที่…" (fictional place), "คุณคิดว่าใครทำ?" | `anime` | `pridi` | `box` | `flat` or `woodcut` | low `strings` + `timpani` | `tvClick`, `woodTick`, `subBoom` | `push`, `wipe` |
-| **วัด / ตำนานโบราณ** | temple, a monk's rule "อย่า…", ornate title | `puppet` or `K.chibi` | `srisakdi` titles | `paper` | `woodcut` or `ink` · warm gold | `Thai.ranatRoll` + `Thai.chingCycle` + `Thai.klong` | `Thai.templeBell`, `Thai.gong`, wind | `dip` gold, `iris` |
+| **วัด / ตำนานโบราณ** | temple, a monk's rule "อย่า…", ornate title | `puppet` or `chibi` | `srisakdi` titles | `paper` | `woodcut` or `ink` · warm gold | `Thai.ranatRoll` + `Thai.chingCycle` + `Thai.klong` | `Thai.templeBell`, `Thai.gong`, wind | `dip` gold, `iris` |
 
 ## Everything else
 

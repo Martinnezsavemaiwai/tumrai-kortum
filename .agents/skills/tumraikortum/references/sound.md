@@ -7,6 +7,7 @@
 - Free plan: ~10k characters/month, ~21 premade voices via API (Voice Library voices are not available to free API users), **non-commercial**. A key without `voices_read` cannot list voices but can still speak.
 - Different characters → different voice IDs: put a `VOICE` map in `score.js` and give each `SHOTS` row a `voice`; `tts.py` sends it per line (`ELEVENLABS_VOICE_ID` / George for the narrator).
 - Free plan works with the current **default** voices, e.g. George `JBFqnCBsd6RMkjVDRZzb` (narrator), Sarah `EXAVITQu4vr4xnSDxMaL` (young woman), Liam `TX3LPaxmHKxFdv7VOQHJ` (young man), Laura `FGY2WhTYpPnrIDTdsKH5`, Charlie `IKne3meq5aSn9XLyUdCD`, Callum `N2lVS1w4EtoT3dr4eOWO`, Lily `pFZP5JQG7iQjIQuC4Bku`, Brian `nPczCjzI2devNBz1zQrb`. Older names like Rachel/Adam are now Library voices → HTTP 402 on the free plan.
+- Files are named by the start rounded half-up (`20.5` → `021.mp3`, like `Math.round`); load them in song.js with `String(Math.round(s.t)).padStart(3, '0')`.
 - After generating, check every line fits its shot (`duration < shot length − VO_LAG`).
 - Local/open alternative for extra voices: PyThaiTTS + KhanomTan (check the model licence before monetised use).
 

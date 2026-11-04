@@ -56,8 +56,6 @@ Start your own: `node .agents/skills/tumraikortum/scripts/new-episode.mjs exampl
 |---|---|
 | `.agents/skills/tumraikortum/` | the skill: `SKILL.md`, `scripts/` (scaffold, fonts, voice, long render), `kit/` (rig, art styles, subtitles, Thai sound, explainer props, chapters), `references/` |
 | `examples/` | small working films to copy from (original content, code only) |
-| `halloween-ep1/`, `halloween-ep2a/`, `halloween-ep3/` | the channel's season 1 episodes (in progress) |
-| `halloween-script.md` | season 1 story bible |
 | `*/engine/` | the renderer each film carries (canvas + headless Chrome + ffmpeg) |
 
 Renders (`out/`), generated voice (`voice/`) and downloaded fonts (`assets/fonts/`) are not committed.

@@ -5,7 +5,7 @@
 - Draw with Canvas (`ctx.font = '700 84px Kanit'`, `strokeText` 16 px black then `fillText` white). Chrome shapes Thai correctly.
 - If you ever render subtitles through libass/ASS instead: **Spacing must be 0** in every style, or stacked tone marks (ที่, ตอนที่) disappear; use `shaping=complex`.
 - Line breaks: Thai has no spaces between words — break by hand with `\n` in `SHOTS` at a word boundary; ≤ ~16 characters per line, max 2 lines.
-- Rail position: baseline at `H*0.75`, English 70 px below. With an English line `Kit.subtitles` keeps it inside `G.SAFE` (9:16: lifts the block 14 px, closes the gap to 60 px, shrinks a line wider than the safe area). Keep faces above `H*0.70` by staging the set high (floor at `H*0.48`), or let `Direct.cam` frame them.
+- Rail position: baseline at `H*0.75` (`o.base` overrides it; after-close uses `H*0.73`, one line at a time, no English, to stay above the ~480–500 px the TikTok UI covers), English 70 px below. With an English line `Kit.subtitles` keeps it inside `G.SAFE` (9:16: lifts the block 14 px, closes the gap to 60 px, shrinks a line wider than the safe area). A Thai sub whose widest line doesn't fit between the safe edges shrinks as one block — still break lines at ≤ ~16 characters so it rarely has to. Keep faces above `H*0.70` by staging the set high (floor at `H*0.48`), or let `Direct.cam` frame them.
 - Key lines (≤ 3 per episode): white text on a red rounded box, pop in with `ease.outBack`; normal lines fade in.
 - Sound tags for muted viewers: italic Kanit 500, yellow, at `G.SAFE.y + 60`.
 - Platform UI covers the top 11.5 %, bottom 22 %, right 140 px — no text there.

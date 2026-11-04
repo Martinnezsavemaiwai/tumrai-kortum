@@ -62,12 +62,13 @@
   // ---------- character spec: every field a `who` object may have (story.mjs validates bible looks with R.check) ----------
   const SPEC = {
     body: Object.keys(BODY),
-    colors: ['skin', 'hair', 'eye', 'top', 'collar', 'bottom', 'shoes', 'tie', 'jacket', 'glasses', 'accent'],
-    hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft'],
-    bottomStyle: ['skirt', 'pants'],
+    colors: ['skin', 'hair', 'eye', 'top', 'collar', 'bottom', 'shoes', 'tie', 'jacket', 'glasses', 'accent', 'sash', 'band', 'belt', 'socks', 'apron', 'bow', 'vest', 'markColor'],
+    hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft', 'buzz'],
+    bottomStyle: ['skirt', 'pants', 'shorts', 'sarong'],
+    shoeStyle: ['sneaker', 'leather', 'flipflop'],
     nose: ['straight', 'hook'],
-    flags: ['old', 'crown', 'belly'],
-    text: ['name'],
+    flags: ['old', 'crown', 'belly', 'mustache', 'sleeveless', 'check'],
+    text: ['name', 'mark'],
   };
   function check(who) {
     const out = [];
@@ -75,7 +76,7 @@
       if (SPEC.colors.includes(k)) { if (!/^#[0-9a-fA-F]{6}$/.test(String(v))) out.push(`${k}: "${v}" is not a #rrggbb colour`); }
       else if (Array.isArray(SPEC[k])) { if (!SPEC[k].includes(v)) out.push(`${k}: "${v}" is not one of ${SPEC[k].join(' ')}`); }
       else if (SPEC.flags.includes(k)) { if (typeof v !== 'boolean') out.push(`${k}: must be true/false`); }
-      else if (!SPEC.text.includes(k)) out.push(`${k}: unknown field (have ${[...SPEC.colors, 'body', 'hairStyle', 'bottomStyle', 'nose', ...SPEC.flags, 'name'].join(' ')})`);
+      else if (!SPEC.text.includes(k)) out.push(`${k}: unknown field (have ${[...SPEC.colors, 'body', 'hairStyle', 'bottomStyle', 'shoeStyle', 'nose', ...SPEC.flags, 'name'].join(' ')})`);
     }
     if (who && who.body !== 'puppet' && !who.skin) out.push('skin: missing');
     return out;
@@ -183,7 +184,7 @@
   // ---------- hair (front view) ----------
   // sway (radians-ish, from R.act): hair lags behind the head, bending more toward the tips (secondary motion)
   function hairBack(ctx, c, hx, hy, rx, ry, seed, sway = 0) {
-    if (!c.hair || c.hairStyle === 'bald' || c.hairStyle === 'spiky' || c.hairStyle === 'tuft') return;
+    if (!c.hair || c.hairStyle === 'bald' || c.hairStyle === 'spiky' || c.hairStyle === 'tuft' || c.hairStyle === 'buzz') return;
     const dark = shade(c.hair, -0.25);
     const bend = (ctrl) => (sway ? ctrl.map(([u, v]) => [u + sway * Math.pow(Math.max(0, v + 0.5), 1.3) * 0.3, v]) : ctrl);
     const S = (ctrl) => spline(bend(ctrl), hx, hy, rx, ry);
@@ -201,8 +202,43 @@
     if (c.hairStyle === 'ponytail') tail(1, [[0.55, -0.95], [1.3, -0.85], [1.62, 0.1], [1.6, 1.3], [1.32, 2.1], [1.42, 2.55], [1.06, 2.0], [1.12, 0.9], [0.9, -0.1]]);
     ell(ctx, hx, hy - ry * 0.1, rx * 1.12, ry * 1.08, c.hair, seed + 3);
   }
+  // ---------- shoes (non-cartoon bodies): the foot points outward (d), sole on the ground line ay + foot*0.4 ----------
+  //   sneaker = canvas upper, white rubber sole + toe cap, laces · leather = rounded toe, dark heel/sole, shine ·
+  //   flipflop = bare foot on a flat rubber sole with a thong strap (รองเท้าแตะหูหนีบ) · none = the old plain wedge
+  function shoe(ctx, c, ax, ay, d, B, seed) {
+    const col = c.shoes || '#3A3030', L = B.leg * 1.1, F = B.foot * 1.3, toe = ax + d * F * 0.95, back = ax - d * L * 0.62;
+    const upper = [[ax - d * L * 0.6, ay - F * 0.32], [ax + d * L * 0.6, ay - F * 0.32], [toe, ay + F * 0.02], [toe - d * F * 0.05, ay + F * 0.3], [back, ay + F * 0.3]];
+    if (c.shoeStyle === 'flipflop') {
+      poly(ctx, [[back - d * 4, ay + F * 0.28], [toe + d * 8, ay + F * 0.28], [toe + d * 8, ay + F * 0.46], [back - d * 4, ay + F * 0.46]], col, seed + 1, { lw: 3 });
+      poly(ctx, [[ax - d * L * 0.5, ay - F * 0.3], [ax + d * L * 0.5, ay - F * 0.3], [toe - d * 2, ay + F * 0.12], [toe - d * 6, ay + F * 0.3], [back, ay + F * 0.3]], c.skin || '#E9C2A2', seed, { lw: 3 });
+      G.line(ctx, [[ax - d * L * 0.45, ay + F * 0.22], [ax + d * F * 0.5, ay - F * 0.02], [ax + d * L * 0.55, ay + F * 0.24]], { color: col, lw: 6, seed: seed + 2 });
+      return;
+    }
+    if (c.shoeStyle === 'sneaker') {
+      poly(ctx, upper, col, seed);
+      poly(ctx, [[back - d * 2, ay + F * 0.18], [toe + d * 3, ay + F * 0.18], [toe + d * 3, ay + F * 0.44], [back - d * 2, ay + F * 0.44]], '#F2F0EA', seed + 1, { lw: 3 });
+      ell(ctx, toe - d * F * 0.18, ay + F * 0.12, F * 0.22, F * 0.16, '#F2F0EA', seed + 2, { lw: 3 });
+      for (let k = 0; k < 2; k++) G.line(ctx, [[ax - d * L * 0.25 + d * k * 8, ay - F * 0.2 + k * 9], [ax + d * L * 0.3 + d * k * 8, ay - F * 0.12 + k * 9]], { color: '#F2F0EA', lw: 3, seed: seed + 3 + k });
+      return;
+    }
+    if (c.shoeStyle === 'leather') {
+      poly(ctx, upper, col, seed);
+      poly(ctx, [[back - d * 2, ay + F * 0.26], [toe + d * 2, ay + F * 0.26], [toe + d * 2, ay + F * 0.42], [back - d * 2, ay + F * 0.42]], shade(col, -0.45), seed + 1, { lw: 3 });
+      ctx.save(); ctx.globalAlpha = 0.55; G.line(ctx, [[toe - d * F * 0.5, ay - F * 0.02], [toe - d * F * 0.18, ay + F * 0.06]], { color: '#FFFFFF', lw: 5, seed: seed + 2 }); ctx.restore();
+      return;
+    }
+    poly(ctx, [[ax - d * B.leg * 0.6, ay - B.foot * 0.3], [ax + d * B.leg * 0.6, ay - B.foot * 0.3], [ax + d * B.foot * 0.9, ay + B.foot * 0.35], [ax - d * B.leg * 0.6, ay + B.foot * 0.35]], col, seed); // plain wedge (same winding both feet)
+  }
   function hairFront(ctx, c, hx, hy, rx, ry, seed, body) {
     if (!c.hair || c.hairStyle === 'bald') { if (c.old) for (const d of [-1, 1]) ell(ctx, hx + d * rx * 0.95, hy + ry * 0.05, rx * 0.2, ry * 0.32, c.hair || '#D8D4CC', seed + d); return; }
+    if (c.hairStyle === 'buzz') { // ทรงนักเรียน/เกรียน: a thin cap hugging the scalp, high straight hairline, no locks
+      const cap = [];
+      for (let i = 0; i <= 16; i++) { const a = Math.PI * (1.0 + i / 16); cap.push([hx + Math.cos(a) * rx * 1.03, hy - ry * 0.02 + Math.sin(a) * ry * 1.02]); }
+      cap.push([hx + rx * 0.98, hy - ry * 0.12], [hx + rx * 0.7, hy - ry * 0.42], [hx - rx * 0.7, hy - ry * 0.42], [hx - rx * 0.98, hy - ry * 0.12]);
+      const mix = (p, q, u) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(p.slice(i, i + 2), 16) * (1 - u) + parseInt(q.slice(i, i + 2), 16) * u).toString(16).padStart(2, '0')).join('');
+      sh(ctx, cap, mix(c.hair, c.skin || c.hair, 0.38), seed, { lw: 2 }); // stubble: scalp shows through
+      return;
+    }
     // the crown cap plus a fringe of spiky locks down to the brows
     const cap = [];
     for (let i = 0; i <= 16; i++) { const a = Math.PI * (1.02 + 0.96 * i / 16); cap.push([hx + Math.cos(a) * rx * 1.1, hy - ry * 0.05 + Math.sin(a) * ry * 1.08]); }
@@ -242,6 +278,7 @@
   const DEF = { lSh: 0.12, rSh: 0.12, lEl: 0.1, rEl: 0.1, lHip: 0.04, rHip: 0.04, lKnee: 0, rKnee: 0, lean: 0, tilt: 0, look: 0, lookY: 0, bob: 0, sx: 1, sy: 1, talk: 0 };
   function front(ctx, o, c, B, body, seed) {
     const p = { ...DEF, ...o };
+    if (c.belly) B = { ...B, sw: B.sw * 1.1, ww: B.ww * 1.75, hw: B.hw * 1.35 }; // a round middle (puppets have their own)
     const legLen = B.thigh + B.shin, hipY = -legLen - B.foot * 0.3, sy = hipY - B.torso, neckTop = sy - B.neck;
     const [hrx, hry] = B.head, hy = neckTop - hry * 0.92;
     const bob = p.bob;
@@ -256,8 +293,10 @@
       const pants = c.bottomStyle === 'pants' ? c.bottom : c.skin;
       G.limb(ctx, [[x0, y0], [kx, ky], [ax, ay]], { color: pants, lw: B.leg, seed: seed + 50 + d });
       if (c.bottomStyle === 'pants') G.limb(ctx, [[x0, y0], [kx, ky], [ax, ay - B.leg * 0.3]], { color: pants, lw: B.leg * 1.25, outline: 4, seed: seed + 52 + d });
+      if (c.bottomStyle === 'shorts') G.limb(ctx, [[x0, y0], [x0 + (kx - x0) * 0.72, y0 + (ky - y0) * 0.72]], { color: c.bottom, lw: B.leg * 1.6, outline: 4, seed: seed + 52 + d }); // above the knee
+      if (c.socks) G.limb(ctx, [[kx + (ax - kx) * 0.55, ky + (ay - ky) * 0.55], [ax, ay]], { color: c.socks, lw: B.leg * 1.08, seed: seed + 53 + d });
       if (body === 'cartoon') ell(ctx, ax + d * B.foot * 0.45, ay + B.foot * 0.15, B.foot, B.foot * 0.55, c.shoes || '#C83C4A', seed + 54 + d, { lw: 5 });
-      else poly(ctx, [[ax - B.leg * 0.6, ay - B.foot * 0.3], [ax + B.leg * 0.6, ay - B.foot * 0.3], [ax + d * B.foot * 0.9, ay + B.foot * 0.35], [ax - d * B.leg * 0.6, ay + B.foot * 0.35]], c.shoes || '#3A3030', seed + 56 + d);
+      else shoe(ctx, c, ax, ay, d, B, seed + 56 + d);
     }
 
     // upper body leans and bobs around the hips
@@ -273,8 +312,35 @@
     if (body === 'explainer') { if (c.jacket) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.25, sy - 4], [d * B.sw, sy + 8], [d * B.hw, hipY + 10], [d * B.hw * 0.3, hipY + 10]], c.jacket, seed + 5 + d); }
     if (c.bottomStyle === 'skirt') poly(ctx, [[-B.ww * 1.02, waistY], [B.ww * 1.02, waistY], [B.hw * 1.6, hipY + B.thigh * 0.55], [-B.hw * 1.6, hipY + B.thigh * 0.55]], c.bottom, seed + 3, { hatch: true });
     else if (c.bottom) poly(ctx, [[-B.ww, waistY], [B.ww, waistY], [B.hw, hipY + 16], [-B.hw, hipY + 16]], c.bottom, seed + 3);
+    if (c.bottomStyle === 'sarong') { // ผ้าถุง: a tube of cloth from the waist to the ankles, a fold at the top, woven bands
+      const hem = hipY + (B.thigh + B.shin) * 0.9;
+      poly(ctx, [[-B.ww * 1.02, waistY], [B.ww * 1.02, waistY], [B.hw * 1.14, hem], [-B.hw * 1.14, hem]], c.bottom, seed + 3);
+      for (const u of [0.55, 0.8]) { const y = waistY + (hem - waistY) * u, w = U.lerp(B.ww, B.hw * 1.14, u); poly(ctx, [[-w, y - 9], [w, y - 9], [w, y + 9], [-w, y + 9]], shade(c.bottom, -0.22), seed + 31 + u * 10, { lw: 2 }); }
+      poly(ctx, [[-B.ww * 1.05, waistY - 10], [B.ww * 1.05, waistY - 10], [B.ww * 1.05, waistY + 14], [-B.ww * 1.05, waistY + 14]], shade(c.bottom, 0.12), seed + 33, { lw: 3 });
+    }
+    if (c.apron) { // ผ้ากันเปื้อน: a bib apron with a neck strap and a pocket
+      const top = sy + B.torso * 0.3, hem = hipY + B.thigh * 0.62;
+      for (const d of [-1, 1]) G.line(ctx, [[d * B.ww * 0.55, top], [d * B.sw * 0.3, sy - 2]], { color: shade(c.apron, -0.2), lw: 7, seed: seed + 34 + d });
+      poly(ctx, [[-B.ww * 0.62, top], [B.ww * 0.62, top], [B.hw * 0.95, hem], [-B.hw * 0.95, hem]], c.apron, seed + 36);
+      poly(ctx, [[-B.ww * 0.4, waistY + 20], [B.ww * 0.4, waistY + 20], [B.ww * 0.42, waistY + 70], [-B.ww * 0.42, waistY + 70]], shade(c.apron, -0.12), seed + 37, { lw: 3 });
+    }
+    if (c.belt) { // a leather belt with a brass buckle over the tucked-in shirt
+      poly(ctx, [[-B.ww * 1.02, waistY - 6], [B.ww * 1.02, waistY - 6], [B.ww * 1.03, waistY + 12], [-B.ww * 1.03, waistY + 12]], c.belt, seed + 8);
+      poly(ctx, [[-13, waistY - 9], [13, waistY - 9], [13, waistY + 15], [-13, waistY + 15]], '#D8B85A', seed + 10);
+    }
+    if (c.vest) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.22, sy - 4], [d * B.sw * 0.95, sy + 10], [d * B.hw * 1.02, hipY + 14], [d * B.hw * 0.25, hipY + 14]], c.vest, seed + 38 + d); // an open vest (เสื้อกั๊กวิน)
+    if (c.mark) { // embroidered school initials (อักษรย่อ) on the chest, navy thread — or a vest number in markColor
+      ctx.save(); ctx.fillStyle = c.markColor || '#2E3F8A'; ctx.font = '700 ' + Math.round(B.sw * 0.3) + 'px Kanit'; ctx.textAlign = 'center';
+      ctx.fillText(c.mark, B.sw * 0.58, sy + B.torso * 0.24); ctx.restore();
+    }
     if (c.collar) for (const d of [-1, 1]) poly(ctx, [[0, sy + 30], [d * B.sw * 0.55, sy - 4], [d * B.sw * 0.75, sy + 34], [d * 8, sy + 50]], c.collar, seed + 4 + d);
     if (c.tie) poly(ctx, [[-10, sy + 40], [10, sy + 40], [16, sy + 90], [0, sy + 104], [-16, sy + 90]], c.tie, seed + 7);
+    if (c.bow) { for (const d of [-1, 1]) poly(ctx, [[0, sy + 30], [d * 34, sy + 14], [d * 34, sy + 50]], c.bow, seed + 40 + d, { lw: 3 }); ell(ctx, 0, sy + 32, 9, 9, shade(c.bow, -0.15), seed + 42, { lw: 2 }); } // โบว์นักเรียนหญิง
+    if (c.sash) { // a cloth belt (ผ้าคาดเอว) with its knotted end hanging at the side
+      poly(ctx, [[-B.ww * 1.06, waistY - 14], [B.ww * 1.06, waistY - 14], [B.ww * 1.08, waistY + 22], [-B.ww * 1.08, waistY + 22]], c.sash, seed + 6);
+      poly(ctx, [[B.ww * 0.45, waistY + 4], [B.ww * 0.7, waistY + 4], [B.ww * 0.78, waistY + 90], [B.ww * 0.5, waistY + 82]], shade(c.sash, -0.12), seed + 9);
+      if (c.check) { ctx.save(); ctx.globalAlpha = 0.45; for (let k = -3; k <= 3; k++) G.line(ctx, [[k * B.ww * 0.3, waistY - 14], [k * B.ww * 0.3, waistY + 22]], { color: '#F4F0E8', lw: 4, seed: seed + 44 + k }); G.line(ctx, [[-B.ww, waistY + 4], [B.ww, waistY + 4]], { color: '#F4F0E8', lw: 4, seed: seed + 51 }); ctx.restore(); } // ผ้าขาวม้า checks
+    }
     // neck
     sh(ctx, G.rrPts(-B.limb * 0.55, neckTop - 8, B.limb * 1.1, B.neck + 22, 8), shade(c.skin, -0.12), seed + 8, { lw: 3 }); // in the head's shadow
 
@@ -301,9 +367,23 @@
     }
     if (body === 'cartoon') { ell(ctx, 0, ey + hry * 0.38, hrx * 0.16, hry * 0.12, shade(c.skin, -0.18), seed + 30); mouth(ctx, 0, ey + hry * 0.62, hrx * 0.42, p, seed + 31, c); }
     else if (body === 'anime') { G.line(ctx, [[2, ey + hry * 0.28], [-2, ey + hry * 0.34]], { color: shade(c.skin, -0.35), lw: 3, seed: seed + 32 }); mouth(ctx, 0, ey + hry * 0.5, hrx * 0.16, p, seed + 33, c); ctx.fillStyle = 'rgba(240,120,140,0.25)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.05, ey + hry * 0.32, 16, 6, 0, 0, Math.PI * 2); ctx.fill(); } }
-    else { mouth(ctx, 0, ey + hry * 0.42, hrx * 0.12, p, seed + 34, c); ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, 24, 12, 0, 0, Math.PI * 2); ctx.fill(); } }
+    else { mouth(ctx, 0, ey + hry * 0.42, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.2 : 0.12), p, seed + 34, c); /* a smirk/grin must read at phone size */ ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, 24, 12, 0, 0, Math.PI * 2); ctx.fill(); } }
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.2, ey + 10], [d * ex * 1.5, ey + 2]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
+    if (c.mustache) { // two curls just above the mouth
+      const my = ey + hry * (body === 'cartoon' ? 0.62 : body === 'anime' ? 0.5 : 0.42) - hry * 0.13, w = hrx * (body === 'cartoon' ? 0.45 : 0.24);
+      for (const d of [-1, 1]) G.line(ctx, [[d * 4, my], [d * w * 0.5, my + hry * 0.05], [d * w, my - hry * 0.02], [d * w * 1.1, my - hry * 0.1]], { color: c.hair || INK, lw: hry * 0.045, seed: seed + 38 + d });
+    }
     hairFront(ctx, c, 0, hy, hrx, hry, seed + 40, body);
+    if (c.crown) { // a Thai chada: gold band, three tiers, a tall spire, red gems
+      const gold = '#E2B04A', top = hy - hry * 0.95, bw = hrx * 0.8;
+      poly(ctx, [[-bw, top + hry * 0.18], [bw, top + hry * 0.18], [bw * 0.92, top - hry * 0.05], [-bw * 0.92, top - hry * 0.05]], gold, seed + 70);
+      for (let k = 0; k < 3; k++) {
+        const y0 = top - hry * (0.05 + k * 0.22), w0 = bw * (0.82 - k * 0.2), w1 = bw * (0.66 - k * 0.2);
+        poly(ctx, [[-w0, y0], [w0, y0], [w1, y0 - hry * 0.22], [-w1, y0 - hry * 0.22]], k % 2 ? shade(gold, -0.15) : gold, seed + 71 + k);
+      }
+      poly(ctx, [[-bw * 0.22, top - hry * 0.71], [bw * 0.22, top - hry * 0.71], [0, top - hry * 1.35]], gold, seed + 75);
+      for (const d of [-0.5, 0, 0.5]) ell(ctx, d * bw, top + hry * 0.065, hry * 0.05, hry * 0.05, '#C8323C', seed + 76 + d * 2, { lw: 2 });
+    }
     // anime brows sit on top of the fringe (the style draws them through the hair); + tilt = inner end down
     if (body === 'anime' && p.eyes !== 'happy') for (const d of [-1, 1]) {
       const tilt = p.eyes === 'angry' ? 9 : p.eyes === 'sad' || p.eyes === 'shock' ? -8 : 0;
@@ -322,7 +402,11 @@
       if (body === 'cartoon') G.limb(ctx, pts, { color: INK, lw: B.limb * 0.55, outline: 0, seed: seed + 70 + d });
       else {
         G.limb(ctx, pts.slice(2), { color: c.skin, lw: B.limb * 0.85, seed: seed + 72 + d }); // forearm
-        G.limb(ctx, pts.slice(0, 3), { color: c.top || c.skin, lw: B.limb * 1.1, seed: seed + 74 + d }); // sleeve
+        G.limb(ctx, pts.slice(0, 3), { color: c.sleeveless ? c.skin : c.top || c.skin, lw: B.limb * (c.sleeveless ? 0.85 : 1.1), seed: seed + 74 + d }); // sleeve (bare arm when sleeveless)
+      }
+      if (c.band && d === 1) { // a wristband on the screen-right forearm, clear of the hand/glove so it reads small
+        const at = (u) => [exl + (wx - exl) * u, eyl + (wy - eyl) * u];
+        G.limb(ctx, [at(0.58), at(0.82)], { color: c.band, lw: B.limb * (body === 'cartoon' ? 1.3 : 1.15), seed: seed + 90 });
       }
       hand(ctx, wx, wy, a2, d, kind, B.hand, c.skin, body, seed + 80 + d * 7);
     }

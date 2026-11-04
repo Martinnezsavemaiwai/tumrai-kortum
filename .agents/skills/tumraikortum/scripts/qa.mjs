@@ -110,8 +110,8 @@ function serve(root) {
   return new Promise((r) => srv.listen(0, '127.0.0.1', () => r(srv)));
 }
 async function chrome() {
-  const bin = process.env.CHROME_PATH || ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find((p) => fs.existsSync(p));
-  if (!bin) throw new Error('Chrome not found: set CHROME_PATH');
+  const bin = process.env.CHROME_PATH || ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find((p) => fs.existsSync(p));
+  if (!bin || !fs.existsSync(bin)) throw new Error(`Chrome not found${bin ? ` at CHROME_PATH=${bin}` : ''}: set CHROME_PATH to chrome(.exe)`);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qa-chrome-'));
   const proc = spawn(bin, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`, '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--disable-extensions', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore', detached: true });
   const kill = () => { try { if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore' }); else process.kill(-proc.pid); } catch { /* gone */ } try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* locked */ } };
@@ -158,7 +158,8 @@ const FRAME_JS = (t, mark) => `(() => {
 export async function browserChecks(ep, S, { every = 1, bible = null } = {}) {
   const E = [], Wn = [], frames = [];
   const srv = await serve(path.resolve(ep)), port = srv.address().port;
-  const b = await chrome();
+  let b;
+  try { b = await chrome(); } catch (e) { srv.close(); throw e; } // an open server would keep node alive forever
   const drain = (when) => {
     for (const m of b.events.splice(0)) {
       if (m.method === 'Runtime.exceptionThrown') { const d = m.params.exceptionDetails; E.push(`JS exception ${when}: ${(d.exception?.description || d.text).split('\n')[0]}`); }

@@ -24,8 +24,8 @@ Frames sampled: 0.7 s into every shot (after its transition) and 0.5 s later; fi
 Measured rather than listened: QA does not hear the sound — `render.js verify` / `check` cover sync and loudness on
 the final file.
 
-Limits: faces are only known for characters drawn with `kit/rig.js` (not the paper `K.chibi` of the halloween
-episodes, not `Ch.person`); a model-sheet scene (`examples/rig-lab`) warns about faces low on its pages by design;
+Limits: faces are only known for characters drawn with `kit/rig.js` (not
+`Ch.person`); a model-sheet scene (`examples/rig-lab`) warns about faces low on its pages by design;
 voice lengths are estimated here — `shots.mjs` measures them from the mp3s.
 
 Test scenes: `examples/dialogue-demo` (series cast from the bible, `Direct` camera, `R.act` acting; must pass with no
