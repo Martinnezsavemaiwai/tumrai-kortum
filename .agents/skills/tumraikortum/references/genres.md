@@ -7,13 +7,30 @@ body + font + sub style + music.
 
 - Characters: `kit/rig.js` bodies `anime` · `cartoon` · `chibi` · `explainer` (flat vector, soft shading, glasses) · `puppet` (หนังตะลุง).
   See `chibi-rig.md`.
-- Drawing style: engine `paper flat watercolor chalk neon pixel` + `kit/art.js` `ink woodcut crayon manga`
-  (`STYLE` in score.js, or `--style` to try one).
+- Drawing style: six families. Set `STYLE` in score.js to a key below, or pass `--style` to try one. Engine keys:
+  `flat paper watercolor chalk neon pixel`. `kit/art.js` keys: `ink crayon woodcut manga`.
+  - **flat**: clean vector, the safe pick for any genre. The menu groups three outlined looks under it:
+    - `paper` has ink outlines that wobble (re-drawn 12×/s, so held frames stay alive), light hatching and a paper-grain/vignette finish. The engine uses it when `STYLE` is unset.
+    - `ink` has heavier outlines. Apply `G.grade` for its muted colours.
+    - `crayon` has a scribble fill for sketchbook, diary and kids' scenes. The scribble fades at a distance, so use close and medium shots.
+  - **watercolor**: soft washes for warm, gentle or dreamy stories.
+  - **chalk**: a dark board for lessons and night scenes. Use a dark background.
+  - **neon**: a dark glow for sci-fi, nightlife and the city. Use a dark background.
+  - **woodcut**: a carved hatch for legends, temples, news and old tales.
+  - **manga**: black-and-white screen tones for mystery, puzzles and drama.
+  - Use the genre recipe as a starting point. Choose `flat` or `paper` when unsure.
+  - Optional effect: `pixel` gives retro game scenes stepped contours. Check subtitle legibility at delivery size because pixelation also affects overlays.
 - Fonts: `node scripts/setup-fonts.mjs <ep> <key…>`. Sub styles, glitch, VHS: `kit/style.js`.
 - Explainer props (`kit/explainer.js`, global `X`): `bookBadge`, `stopwatch`, `split`, `badge`, `chart`, `crowd`, `povHands`.
 - Music: engine `Genre.play(name)` (`lofi chiptune orchestral edm afrobeats qawwali desi boombap`) or
   `kit/thai.js` (ranat, khim, khaen, pi, ching, klong, gong, temple bell). Transitions (`engine/video/shots.js`):
   `cut fade dip iris irisIn wipe push whip zoom flash paper`.
+
+## Reviewing the style menu
+
+- Compare the same cast, shot, lighting and acting at playback speed. Use stills to assess line, colour and face readability. For a style that needs a particular background or lighting, test it in that setting before judging it.
+- Recommend keep, group as a preset, revise, or retire. Say what each style adds, where it overlaps, and which episodes or examples use its name. Keep working style identifiers when grouping menu entries. Check real callers before proposing a rename or removal.
+- Separate confirmed overlap, rendering defects and missing evidence. Show the comparisons and decisions before changing the renderer. Use the shortest clip that answers the question.
 
 ## Horror / mystery
 
@@ -53,6 +70,7 @@ body + font + sub style + music.
 - Don't mix bodies in one shot (an `anime` hero next to a `cartoon` sidekick reads as a mistake) unless the
   clash is the joke.
 - `anime` faces are small in a full-body shot: frame them waist-up (s ≈ 1.8–3) when the face matters.
+- In wide shots, check that `cartoon` arms separate from the torso and background. Frame closer when a facial reaction or gesture carries the beat.
 - Book summaries: retell the idea **in your own words** and your own metaphor, credit title + author on the
   `bookBadge`, quote the book at most one short sentence. Don't copy another channel's metaphor or script.
   `examples/explainer-demo/` is a working example (original content, fictional badge).

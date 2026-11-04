@@ -1,11 +1,13 @@
 ---
 name: tumraikortum
-description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking, หนังตะลุง…). Every frame drawn in canvas code (anime / cartoon / chibi / explainer / shadow-puppet characters, ten drawing styles), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode in this repo.
+description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking, หนังตะลุง…). Every frame drawn in canvas code (anime / cartoon / chibi / explainer / shadow-puppet characters, six drawing-style families), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode, or review its drawing styles.
 ---
 
 # TumraiKortum (ทำไรก็ทำ)
 
-A code-only animation pipeline: every frame drawn on a canvas, every sound synthesized, Thai voice from ElevenLabs. It started with Thai horror "choose your path" shorts and now covers other genres (`references/genres.md`), four character bodies, ten drawing styles and long 16:9 videos. Starting points to scaffold from: `examples/explainer-demo` (9:16 short, rig + explainer kit), `examples/longform-demo` (16:9, chapters).
+A code-only animation pipeline: every frame drawn on a canvas, every sound synthesized, Thai voice from ElevenLabs. It started with Thai horror "choose your path" shorts and now covers other genres (`references/genres.md`), five character bodies, six drawing-style families (flat with paper · ink · crayon, watercolor, chalk, neon, woodcut, manga) and long 16:9 videos. Starting points to scaffold from: `examples/explainer-demo` (9:16 short, rig + explainer kit), `examples/longform-demo` (16:9, chapters).
+
+For a style-menu review, follow [Reviewing the style menu](references/genres.md#reviewing-the-style-menu).
 
 ## The format (what makes an episode)
 
@@ -28,7 +30,7 @@ validation. Load the one for the step you are on.
 | 1 story | `narrative-director` | `<ep>/STORY.md` | `continuity-checker` |
 | series facts | `story-memory` — **the only one that edits `stories/`**; canon only via proposals the user approves | `stories/<series>/bible.json` drafts, `proposals/` | `story.mjs check` |
 | 2 storyboard, acting, camera | `storyboard-director` | `STORYBOARD.md`, `SHOTS` camera fields, acting keys | `shots.mjs`, `continuity-checker` |
-| 4 characters | `character-design` | look specs (through `story-memory`), model sheets, `cast.js` | `R.check`, `visual-reviewer` |
+| 4 characters | `character-design` | look specs (through `story-memory` for a series), model sheets, acting samples, `cast.js` | `R.check`, `visual-reviewer` for stills, playback review for acting |
 | 9 review | — | — | `visual-reviewer` |
 
 `continuity-checker` and `visual-reviewer` are Claude Code subagents (`.claude/agents/`): they run in a fresh
@@ -40,8 +42,8 @@ subagents (Codex) follow the same files as checklists in a separate pass.
 
 1. **Genre + story** → pick a row from `references/genres.md` (font, sub style, look, music, SFX, transitions; don't repeat the last episode's combo), then `<episode>/STORY.md` with `**แนว:**` on top (logline, the one wrong thing, clue list, choice at the end). For a series, the facts live in `stories/<series>/bible.json`: read `story.mjs context <series> <ep>` first, add the episode's events/facts as drafts, and `story.mjs check` must pass. Never change canon yourself — write a proposal (`references/story-memory.md`).
 2. **Storyboard** → `<episode>/STORYBOARD.md` shot table: time, picture/acting, shot · on · move (types ECU…EWS, moves static/push/pull/drift/pan/track — `references/directing.md`), transition, Thai VO, SFX, plus the scene sides. Most shots are static; a move needs a story reason. Approve before drawing. (Template: `references/storyboard-template.md`.)
-3. **Scaffold**: `node .agents/skills/tumraikortum/scripts/new-episode.mjs <from-episode> <new-episode>` copies the engine, chibi rig, index.html and the skill's `kit/` (art + rig + explainer + style + Thai sound kit, script tags added); `setup-fonts.mjs <ep> <keys>` fetches the genre's fonts; then rewrite `score.js`, `song.js`, `film.js`.
-4. **Cast + look**: pick the character body from the genre — `kit/rig.js` (`R.draw`: `anime` · `cartoon` · `chibi` · `explainer` · `puppet` หนังตะลุง; neck, elbows, hands with fingers, 15 shared poses, `R.act`, `R.walk`). Pick the drawing style from the genre (`STYLE` in score.js: paper flat watercolor chalk neon pixel + kit ink woodcut crayon manga). Render a model sheet and get approval for new characters. A series' characters are data in `stories/<series>/bible.json` (`look` = a rig `who`, checked by `R.check`): `story.mjs cast <series> <ep> --out <ep>/cast.js`, add `<script src="cast.js">` after `kit/rig.js`, then `R.draw(ctx, { who: 'id', … })` — never retype colours in film.js. Model sheets: `examples/rig-lab`. (`references/chibi-rig.md`)
+3. **Scaffold**: `node .agents/skills/tumraikortum/scripts/new-episode.mjs <from-episode> <new-episode>` copies the source episode (including its engine and index.html) and adds the skill's `kit/` (art + rig + explainer + style + Thai sound kit, script tags added); `setup-fonts.mjs <ep> <keys>` fetches the genre's fonts; then rewrite `score.js`, `song.js`, `film.js`.
+4. **Cast + look**: pick the character body from the genre — `kit/rig.js` (`R.draw`: `anime` · `cartoon` · `chibi` · `explainer` · `puppet` หนังตะลุง; neck, elbows, hands with fingers, 15 shared poses, `R.act`, `R.walk`). Pick the drawing style from the genre (`STYLE` in score.js, see the [genre menu](references/genres.md) for keys and variants). Follow `character-design` for the brief, references, model sheet and acting sample. Get approval before producing scenes with the new look. A series' characters are data in `stories/<series>/bible.json` (`look` = a rig `who`, checked by `R.check`): `story.mjs cast <series> <ep> --out <ep>/cast.js`, add `<script src="cast.js">` after `kit/rig.js`, then `R.draw(ctx, { who: 'id', … })` — never retype colours in film.js. Model sheets: `examples/rig-lab`. (`references/chibi-rig.md`)
 5. **score.js** = single source of truth: `SHOTS` (start, Thai line, English, red?, and `shot on look move scene` from the storyboard; `scenes` sides; `GENRE`) — `scripts/shots.mjs <ep>` must show no errors (lines fit their shots, 180° line, pacing, storyboard ↔ score), `ev` (every hit/sound/visual event), `markers` with `sync: 'av'` for hits, `subtitles`, `soundTags`, `lightOn(t)`.
 6. **Voice**: `python .agents/skills/tumraikortum/scripts/tts.py <episode>` → `<episode>/voice/<start>.mp3` (cached). Needs `ELEVENLABS_API_KEY` in `.env` — never print it, never commit it. (`references/sound.md`)
 7. **song.js**: the genre's music (engine `genres.js`, or `require('./kit/thai')` for ranat/khim/khaen/pi/ching/klong/gong/temple bell in the Thai 7-tone scale, plus wind/whisper), event SFX, VO loaded from `voice/`, duck music under VO, `LUFS=-14`. Measure with `STEMS=1 node song.js` + `node engine/tools/levels.js` — you cannot hear it.
@@ -74,10 +76,10 @@ subagents (Codex) follow the same files as checklists in a separate pass.
 - `scripts/tts.py` — Thai VO for every shot line in an episode's `score.js` (ElevenLabs v3; `--dry` = character count before spending credits; `--voices` lists usable voices).
 - `scripts/render-long.mjs` — long videos: render each chapter to `out/parts/` (resumable, `--redo id`), join, mux, SRT, YouTube chapters.
 - `scripts/setup-fonts.mjs` — download Kanit + the genre's Thai fonts (all SIL OFL) into an episode's `assets/fonts/`.
-- `kit/rig.js` — skeleton character rig: bodies anime / cartoon / chibi / puppet, finger hands, `R.POSES`, `R.act` (follow-through, blink-covered expression swaps, breathing/blinks per `seed`, hair sway, `gestures`), `R.walk`, `R.CAST`, `R.screen` (lit cloth for หนังตะลุง).
+- `kit/rig.js` — skeleton character rig: bodies anime / cartoon / chibi / explainer / puppet, finger hands, `R.POSES`, `R.act` (follow-through, blink-covered expression swaps, breathing/blinks per `seed`, hair sway, `gestures`), `R.walk`, `R.CAST`, `R.screen` (lit cloth for หนังตะลุง).
 - `kit/chapters.js` — `Chapters.timeline/total/draw/card/progress/youtube` for long videos (node + browser).
 - `kit/explainer.js` — props for สรุปหนังสือ/explainer shorts (`X.bookBadge`, `stopwatch`, `split`, `badge`, `chart`, `crowd`, `povHands`).
-- `kit/art.js` — drawing styles ink · woodcut · crayon · manga (+ `G.grade`), on top of the engine's six.
+- `kit/art.js` — drawing styles ink · woodcut · crayon · manga (+ `G.grade`), in addition to the engine styles listed in the genre menu.
 - `kit/style.js` — subtitle styles (outline box pop karaoke shake glitch paper type keyword — `*word*` boxes a keyword), `Kit.font`, `Kit.glitch`, `Kit.vhs`.
 - `kit/thai.js` — Thai instruments, Thai scale, gong/temple bell/wind/whisper; `node kit/thai.js out/thai-demo.wav` = demo + self-check.
 - `references/` — genre menu, long-form, story format, storyboard template, chibi rig, Thai subtitles, sound, Windows notes.
