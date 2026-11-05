@@ -67,6 +67,16 @@ test('lint: a voice line longer than its shot is an error when measured, a warni
   assert.deepEqual(Direct.lint([shot(1, 0, 4, { th: 'สั้น' })], { voDur: () => 1 }).warnings, []);
 });
 
+test('lint: subtitles — ≤ 2 lines of ≤ 16 characters (marks not counted), readable speed, at least 1 s up', () => {
+  const w = (th, end = 4) => Direct.lint([shot(1, 0, end, { th })], { voDur: () => 1 }).warnings.join('\n');
+  assert.equal(w('ที่นี่ไม่มีใคร\nอยู่เลยจริงๆ'), '', '16 base characters with marks on top is fine');
+  assert.match(w('หนึ่ง\nสอง\nสาม'), /3 lines/);
+  assert.match(w('บ้านหลังนี้ไม่มีใครอยู่มานานแล้ว'), /line 1 has 2\d characters/);
+  assert.match(w('ทุกคนในบ้านหลังนั้น\nหายไปตอนเที่ยงคืน', 2), /characters\/s to read/);
+  assert.match(w('ห๊ะ', 0.8), /under 1 s/);
+  assert.equal(w('*คำ* "สำคัญ"'), '', 'stars and quotes are not read');
+});
+
 test('lint: crossing the 180° line is an error; jump cuts, size repeats and restless cameras are warnings', () => {
   const scenes = { room: { sides: { mali: 'L', krit: 'R' } } };
   const ok = [shot(1, 0, 3, { scene: 'room', on: 'mali', look: 1, shot: 'MS' }), shot(2, 3, 6, { scene: 'room', on: 'krit', look: -1, shot: 'CU' })];
