@@ -1,13 +1,16 @@
 """Thai voiceover for a TumraiKortum episode via ElevenLabs (eleven_v3).
 
 Reads SHOTS from <episode>/score.js (needs node) and writes <episode>/voice/<start>.mp3,
-skipping files that already exist. Key: ELEVENLABS_API_KEY in .env (repo root or episode),
-optional ELEVENLABS_VOICE_ID. Never print or commit the key.
+skipping files that already exist, plus <start>.json: the start time of each subtitle character from
+ElevenLabs' alignment (/with-timestamps), so Kit.voiceTimes can light up words as they are said.
+Key: ELEVENLABS_API_KEY in .env (repo root or episode), optional ELEVENLABS_VOICE_ID. Never print or commit the key.
 
     python tts.py <episode>            generate missing lines
     python tts.py <episode> --dry      show what would be sent, no API calls
     python tts.py --voices             list voices (needs the key's voices_read permission)
+    python tts.py --selftest           check the alignment code (no API calls)
 """
+import base64
 import json
 import math
 import os
@@ -53,7 +56,50 @@ def shots(ep):
     return [s for s in json.loads(out) if s["th"]]
 
 
+def shown(th):
+    """The subtitle text as Kit.subtitles counts characters: no line breaks, no *keyword* stars."""
+    return th.replace("\n", "").replace("*", "")
+
+
+def char_times(text, chars, starts, ends):
+    """Start time of every character of `text` (+ the end of the last one) from ElevenLabs' alignment.
+
+    The alignment covers what was sent (a [tag] first, quotes dropped), so each subtitle character is looked
+    for a few characters ahead; one that was not spoken (a quote) takes the next spoken one's time.
+    None when the alignment does not fit the text (the subtitles then fall back to an even spread).
+    """
+    if not text or not chars or len(starts) != len(chars):
+        return None
+    spoken = "".join(chars)
+    j = spoken.index("]") + 1 if spoken.startswith("[") and "]" in spoken else 0  # skip the [tag]
+    out, missed = [], 0
+    for c in text:
+        k = next((k for k in range(j, min(j + 4, len(chars))) if chars[k] == c), None)
+        if k is None:
+            missed += 1
+            out.append(starts[min(j, len(starts) - 1)])
+        else:
+            out.append(starts[k])
+            j = k + 1
+    if missed > max(2, len(text) * 0.15):
+        return None
+    out.append(ends[j - 1] if j and len(ends) >= j else out[-1])
+    return [round(x, 3) for x in out]
+
+
+def selftest():
+    # 'a"b' said as '[whispers] ab': the quote takes b's time; the end is b's end
+    chars = list("[whispers] ab")
+    st = [i * 0.1 for i in range(len(chars))]
+    assert char_times('a"b', chars, st, [x + 0.1 for x in st]) == [1.1, 1.2, 1.2, 1.3], char_times('a"b', chars, st, st)
+    assert char_times("xyz", list("abc"), [0, 1, 2], [1, 2, 3]) is None  # nothing matches
+    assert shown("*คำ*\nสอง") == "คำสอง"
+    print("tts.py selftest ok")
+
+
 def main():
+    if "--selftest" in sys.argv:
+        return selftest()
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     root = Path(__file__).resolve().parents[4]  # repo root (.agents/skills/tumraikortum/scripts)
     if "--voices" in sys.argv:
@@ -88,8 +134,15 @@ def main():
         f = name(s)
         text = said(s)
         body = {"text": text, "model_id": MODEL, "voice_settings": {"stability": 0.5, "similarity_boost": 0.8}}
-        f.write_bytes(call(f"/text-to-speech/{s['voice'] or voice}?output_format=mp3_44100_128", key, body))
-        print("ok", f.name, text)
+        r = json.loads(call(f"/text-to-speech/{s['voice'] or voice}/with-timestamps?output_format=mp3_44100_128", key, body))
+        f.write_bytes(base64.b64decode(r["audio_base64"]))
+        a = r.get("alignment") or {}
+        # word timing for the subtitles (Kit.voiceTimes); only when the voice says the subtitle's own text
+        times = None if s["say"] else char_times(shown(s["th"]), a.get("characters") or [],
+                                                 a.get("character_start_times_seconds") or [], a.get("character_end_times_seconds") or [])
+        if times:
+            f.with_suffix(".json").write_text(json.dumps({"times": times}), encoding="utf-8")
+        print("ok", f.name, text, "" if times else "(no word timing: subtitles spread evenly)")
 
 
 if __name__ == "__main__":

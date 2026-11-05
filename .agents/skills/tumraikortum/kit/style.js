@@ -36,6 +36,18 @@
 
   // how far through the line the voice is (0..1); words light up/appear by this
   const progress = (sub, t) => clamp((t - sub.t) / Math.max(0.3, (sub.end - sub.t) * 0.8));
+  // the same in words (0..total), from the voice's character times when the sub has them (Kit.voiceTimes)
+  const said = (sub, t, lines, total) => {
+    if (!sub.times) return progress(sub, t) * total;
+    let c = 0, k = 0;
+    for (const ln of lines) for (const w of words(ln.replace(/\*/g, ''))) {
+      const a = sub.times[c], b = sub.times[c + w.length] ?? a;
+      if (t < a) return k;
+      if (t < b) return k + (t - a) / Math.max(0.01, b - a);
+      c += w.length; k++;
+    }
+    return total;
+  };
 
   const STYLES = {
     outline(ctx, line, y, o) { ctx.globalAlpha *= o.fadeIn; outlined(ctx, line, o.W / 2, y, o.color, '#000', o.size * 0.19); },
@@ -120,7 +132,18 @@
   };
   Kit.SUB_STYLES = Object.keys(STYLES);
 
-  // subs: [{ t, end, text ('\n' line breaks), en, red }] — the shape score.js already builds
+  // real word timing: tts.py's voice/<start>.json (ElevenLabs character times) → sub.times, so pop/karaoke/type
+  // follow the voice. In init(): await Kit.voiceTimes(S.subtitles, S.SHOTS, S.VO_LAG). Subs without a file keep the even spread.
+  Kit.voiceTimes = async (subs, shots, lag = 0) => {
+    for (const s of shots) {
+      if (!s.th) continue;
+      const j = await Studio.loadJSON(`voice/${String(Math.floor(s.t + 0.5)).padStart(3, '0')}.json`); // tts.py's file name
+      const sub = j && subs.find((x) => x.text === s.th && Math.abs(x.t - s.t) < 1);
+      if (sub) sub.times = j.times.map((x) => +(x + s.t + lag).toFixed(3));
+    }
+  };
+
+  // subs: [{ t, end, text ('\n' line breaks), en, red, times? }] — the shape score.js already builds
   Kit.subtitles = (ctx, t, subs, o = {}) => {
     const sub = subs.find((x) => t >= x.t && t < x.end);
     if (!sub) return;
@@ -159,7 +182,7 @@
       lines.forEach((ln, i) => {
         ctx.save();
         style(ctx, ln, base - (lines.length - 1 - i) * lh, {
-          W, H, t, sub, size, li: i, total, wordsBefore: before, p: progress(sub, t),
+          W, H, t, sub, size, li: i, total, wordsBefore: before, p: total ? said(sub, t, lines, total) / total : 0,
           fadeIn: clamp((t - sub.t) / 0.25), color: o.color || '#FFFFFF', accent: o.accent || '#FFD23F',
         });
         ctx.restore(); before += counts[i];

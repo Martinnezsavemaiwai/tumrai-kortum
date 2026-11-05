@@ -2,7 +2,7 @@
 
 ## Voice
 
-- `scripts/tts.py <episode>` reads `SHOTS` from the episode's `score.js` and writes `<episode>/voice/<start>.mp3` (start = shot start in seconds, zero-padded to 3 digits). Existing files are skipped — delete one to regenerate it.
+- `scripts/tts.py <episode>` reads `SHOTS` from the episode's `score.js` and writes `<episode>/voice/<start>.mp3` (start = shot start in seconds, zero-padded to 3 digits). Existing files are skipped — delete one to regenerate it. Next to each mp3 goes `<start>.json`: ElevenLabs' character times (`/with-timestamps`, same price) for `Kit.voiceTimes`; none for a line with `say`. An mp3 made before this has no json — delete it and regenerate only if its timing matters.
 - ElevenLabs model `eleven_v3` (the one that speaks Thai). Audio tags per line via `TAGS` / `--tag`: `[whispers]`, `[scared]`, `[nervous]`.
 - Free plan: ~10k characters/month, ~21 premade voices via API (Voice Library voices are not available to free API users), **non-commercial**. A key without `voices_read` cannot list voices but can still speak.
 - Different characters → different voice IDs: put a `VOICE` map in `score.js` and give each `SHOTS` row a `voice`; `tts.py` sends it per line (`ELEVENLABS_VOICE_ID` / George for the narrator).
