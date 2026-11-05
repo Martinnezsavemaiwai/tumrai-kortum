@@ -50,6 +50,7 @@ body + font + sub style + music.
 | **ตลกชีวิตประจำวัน** | "เมื่อแม่บอกว่า…", 20–45 s, punchline + freeze frame | `cartoon` or `chibi` | `mitr` | `pop` | `crayon` or `flat` | `Genre.play('chiptune')` or `Thai.ranat` runs | `boing`, `bwomp`, `paperFwip`, `whistle`, `thwack` | `whip`, `zoom`, `iris` out |
 | **ชีวิตวัยเรียน / โรแมนซ์** | "ถ้าคนที่ชอบ…", two characters, a blush beat, "คุณจะทำยังไง?" | `anime` | `mitr` or `itim` | `karaoke` | `flat` or `watercolor` | `Genre.play('lofi')`, `epiano` | `ting`, `pop`, heartbeat (soft), `fx: ['blush', 'sparkle']` | `fade`, `push` |
 | **ผจญภัย / แฟนตาซี** | a map, a quest, a choice of path each episode | `anime` or `chibi` | `k2d` titles, `kanit` subs | `pop` | `watercolor` or `paper` | `Genre.play('orchestral')`, `brassNote` fanfare | `whoosh` (`noiseSweep`), `bell`, `timpani` | `iris`, `wipe`, `zoom` |
+| **ถ้า… (สังคมขำๆ)** | "ถ้าพรุ่งนี้ทุกคน…" said a phrase at a time while the cast on screen changes to show it (≤ 6 s); one number that grounds it; then a list of gags along one day (a clock badge 06:00 → 12:00 → night), one gag per 4–5 s shot, each with a pop-in sticker/stamp; back to the opening place for a warm last line; "คุณว่าอะไรจะเปลี่ยนอีก?"; 45–70 s | `explainer` or `cartoon`, the same 3-person cast all through | `mitr` or `kanit` | `keyword` (2–4 words a screen) | `flat` | music that fits the premise (`Thai.*` for Thai culture, else `Genre.play('lofi')`), never silent | `pop` per sticker, `ting` on the number, `woodTick` on clock badges, `whoosh` between acts | `cut` within an act, `dip` white between acts |
 | **ไซไฟ / ถ้า…จะเป็นยังไง** | "ถ้าโลกไม่มี…", 3 consequences, "คุณว่าข้อไหนน่ากลัวสุด?" | `cartoon` or `anime` | `chakra` | `box` | `neon` or `flat` | `Genre.play('edm')` or `supersaw` pad | `pulse` blips, `noiseSweep`, `glass` | `zoom`, `flash`, `push` |
 | **กีฬา / แข่งขัน** | "ใครจะชนะ?", a countdown, a slow-mo finish | `cartoon` | `k2d` | `pop` | `flat` | `Genre.play('edm')` or `afrobeats` | `whistle`, `crash`, crowd (`noiseSweep` swells), `thwack` | `whip`, `zoom`, `flash` |
 | **ทำอาหาร / สูตรบ้านๆ** | "3 ขั้นตอน…", top-down steps, the taste reaction | `chibi` | `mitr` | `box` | `crayon` or `watercolor` | `Genre.play('lofi')` | `pop`, `ting`, sizzle (`noiseSweep` pink), `woodTick` chop | `push`, `paper` |
@@ -84,6 +85,7 @@ reason behind later choices: when a shot, transition or prop doesn't fit the dia
 | ตลกชีวิตประจำวัน | 5 | 7 | 3 | `comedy` |
 | ชีวิตวัยเรียน / โรแมนซ์ | 4 | 3 | 2 | `slice` |
 | ผจญภัย / แฟนตาซี | 7 | 7 | 3 | `adventure` |
+| ถ้า… (สังคมขำๆ) | 7 | 4 | 6 | `explainer` |
 | ไซไฟ / ถ้า…จะเป็นยังไง | 7 | 6 | 5 | `fantasy` |
 | กีฬา / แข่งขัน | 5 | 9 | 4 | `adventure` |
 | ทำอาหาร / สูตรบ้านๆ | 3 | 4 | 5 | `explainer` |
