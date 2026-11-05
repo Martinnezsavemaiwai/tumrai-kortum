@@ -3,7 +3,23 @@
 ## Voice
 
 - `scripts/tts.py <episode>` reads `SHOTS` from the episode's `score.js` and writes `<episode>/voice/<start>.mp3` (start = shot start in seconds, zero-padded to 3 digits). Existing files are skipped — delete one to regenerate it. Next to each mp3 goes `<start>.json`: ElevenLabs' character times (`/with-timestamps`, same price) for `Kit.voiceTimes`; none for a line with `say`. An mp3 made before this has no json — delete it and regenerate only if its timing matters.
-- ElevenLabs model `eleven_v3` (the one that speaks Thai). Audio tags per line via `TAGS` / `--tag`: `[whispers]`, `[scared]`, `[nervous]`.
+- ElevenLabs model `eleven_v3` (the one that speaks Thai). It has no SSML `<break>`; it is directed per `SHOTS` row (see below).
+
+### Directing the voice (per `SHOTS` row)
+
+| field | values | what it does |
+|---|---|---|
+| `tag` | `[whispers]` `[sighs]` `[nervous]` `[scared]` `[excited]` `[sarcastic]` `[crying]` `[laughs]`, or a described voice like `[low, shaky voice]` | the delivery, sent before the line (not shown in subtitles) |
+| `take` | `creative` · `natural` (default) · `robust` | stability 0 / 0.5 / 1: wide emotion and more surprises … steady and even |
+| `speed` | 0.7–1.2 (default 1) | slower for dread and reveals, faster for panic and jokes |
+| `…` in `th` | — | a pause inside the line; it stays in the subtitle, so word timing still works (`say` would drop the timing) |
+
+- One delivery per line: if a line needs to turn (calm → scared), split it into two rows.
+- Name the delivery, never "naturally": `[whispers]` + `speed: 0.85`, not "spooky".
+- Horror: narrator `robust` for the setup (calm makes the turn land), `creative` + `[whispers]`/`[scared]` from the turn on; the after-close question `natural`, slow.
+- Comedy: `creative`, `speed` 1.05–1.1, the punchline its own row after a `…`.
+- Explainer / documentary: `robust`, speed 1–1.05; tags rarely.
+- `tts.py --dry` prints each line's cues; a bad `take`/`speed` stops the run before any credit is spent. Changing a cue does not regenerate a cached line — delete its mp3 (+ json) first.
 - Free plan: ~10k characters/month, ~21 premade voices via API (Voice Library voices are not available to free API users), **non-commercial**. A key without `voices_read` cannot list voices but can still speak.
 - Different characters → different voice IDs: put a `VOICE` map in `score.js` and give each `SHOTS` row a `voice`; `tts.py` sends it per line (`ELEVENLABS_VOICE_ID` / George for the narrator).
 - Free plan works with the current **default** voices, e.g. George `JBFqnCBsd6RMkjVDRZzb` (narrator), Sarah `EXAVITQu4vr4xnSDxMaL` (young woman), Liam `TX3LPaxmHKxFdv7VOQHJ` (young man), Laura `FGY2WhTYpPnrIDTdsKH5`, Charlie `IKne3meq5aSn9XLyUdCD`, Callum `N2lVS1w4EtoT3dr4eOWO`, Lily `pFZP5JQG7iQjIQuC4Bku`, Brian `nPczCjzI2devNBz1zQrb`. Older names like Rachel/Adam are now Library voices → HTTP 402 on the free plan.

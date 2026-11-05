@@ -11,7 +11,10 @@
 // Pose fields (radians unless noted): lSh/rSh shoulder (0 = arm hanging, + = out and up), lEl/rEl elbow
 // (+ = forearm swings further out, − = folds in toward the face), lHip/rHip, lKnee/rKnee, lean, tilt (head),
 // look/lookY −1…1, bob (px), sx/sy squash, eyes, mouth, talk 0…1 (mouth open), handL/handR
-// ('open' 'fist' 'point' 'peace' 'thumb' 'relax'), fx ['sweat' 'blush' 'tears' 'anger' 'shock' 'sparkle'].
+// ('open' 'fist' 'point' 'peace' 'thumb' 'relax'), fx ['sweat' 'blush' 'tears' 'anger' 'shock' 'sparkle'],
+// reachL/reachR [x, y]: the wrist goes there (IK, same coordinates as the figure's x, y; overrides that arm's
+// lSh/lEl or rSh/rEl). Move the target over t to animate it: { ...R.act(t, keys), reachR: [knob.x, knob.y] }.
+// ponytail: front-view bodies only (puppet ignores it) and no blend weight; add a `reach` 0…1 mix if a reach must ease in from a pose.
 (function () {
   const G = globalThis.G, U = globalThis.U, H = U.hash;
   const INK = '#1C1620';
@@ -302,6 +305,17 @@
     }
   }
 
+  // two-bone IK: shoulder angle a and elbow el (pose units, side d) that put the wrist at (tx, ty), in the arm's
+  // own coordinates; out of reach = the arm points straight at it. Of the two ways to bend, the one with the
+  // lower elbow (an elbow above the shoulder to reach sideways looks broken).
+  const ik = (x0, y0, tx, ty, d, ua, fa) => {
+    const dx = d * (tx - x0), dy = ty - y0;
+    const L = Math.min(ua + fa - 1e-3, Math.max(Math.abs(ua - fa) + 1e-3, Math.hypot(dx, dy)));
+    const acos = (v) => Math.acos(Math.max(-1, Math.min(1, v)));
+    const al = acos((ua * ua + L * L - fa * fa) / (2 * ua * L)), be = Math.PI - acos((ua * ua + fa * fa - L * L) / (2 * ua * fa)), phi = Math.atan2(dx, dy);
+    return Math.cos(phi + al) >= Math.cos(phi - al) ? [phi + al, -be] : [phi - al, be];
+  };
+
   // ---------- the front-view figure (anime, cartoon, chibi) ----------
   const DEF = { lSh: 0.12, rSh: 0.12, lEl: 0.1, rEl: 0.1, lHip: 0.04, rHip: 0.04, lKnee: 0, rKnee: 0, lean: 0, tilt: 0, look: 0, lookY: 0, bob: 0, sx: 1, sy: 1, talk: 0 };
   function front(ctx, o, c, B, body, seed) {
@@ -433,8 +447,13 @@
 
     // arms, in front of everything (hands can reach the face)
     for (const d of [-1, 1]) {
-      const a = d < 0 ? p.lSh : p.rSh, el = d < 0 ? p.lEl : p.rEl, kind = (d < 0 ? p.handL : p.handR) || 'relax';
+      let a = d < 0 ? p.lSh : p.rSh, el = d < 0 ? p.lEl : p.rEl;
+      const kind = (d < 0 ? p.handL : p.handR) || 'relax', tgt = d < 0 ? p.reachL : p.reachR;
       const x0 = d * B.sw * 0.92, y0 = sy + 16;
+      if (tgt && p.world && ctx.getTransform) { // reachL/reachR: [x, y] in the same coordinates as the figure's x, y
+        const q = ctx.getTransform().inverse().multiply(p.world).transformPoint({ x: tgt[0], y: tgt[1] });
+        [a, el] = ik(x0, y0, q.x, q.y, d, B.ua, B.fa);
+      }
       const exl = x0 + d * Math.sin(a) * B.ua, eyl = y0 + Math.cos(a) * B.ua;
       const a2 = a + el, wx = exl + d * Math.sin(a2) * B.fa, wy = eyl + Math.cos(a2) * B.fa;
       const pts = body === 'cartoon' ? [[x0, y0], [exl, eyl], [wx, wy]] : [[x0, y0], [(x0 + exl) / 2, (y0 + eyl) / 2], [exl, eyl], [(exl + wx) / 2, (eyl + wy) / 2], [wx, wy]];
@@ -524,6 +543,7 @@
     const body = o.body || c.body || 'anime', B = BODY[body];
     if (!B) throw new Error(`unknown body ${body}; have ${Object.keys(BODY).join(', ')}`);
     const seed = (o.seed || 1) * 1000;
+    if ((o.reachL || o.reachR) && ctx.getTransform) o = { ...o, world: ctx.getTransform() }; // where reach targets live
     ctx.save(); ctx.translate(o.x, o.y);
     if (o.shadow !== false && body !== 'puppet') { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 0, 150 * (o.s || 1), 22 * (o.s || 1), 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
     ctx.scale((o.s || 1) * (o.sx || 1), (o.s || 1) * (o.sy || 1));
@@ -648,5 +668,5 @@
     return { lHip: 0.04 + Math.max(0, s) * 0.25, rHip: 0.04 + Math.max(0, -s) * 0.25, lKnee: Math.max(0, s) * 0.6, rKnee: Math.max(0, -s) * 0.6, lSh: 0.12 - s * 0.25, rSh: 0.12 + s * 0.25, bob: -Math.abs(Math.cos(ph)) * 12 };
   };
 
-  globalThis.R = { draw, act, idle, walk, screen, hand, check, SPEC, POSES, GESTURES, CAST, BODY, BODIES: Object.keys(BODY) };
+  globalThis.R = { draw, act, idle, walk, screen, hand, check, ik, SPEC, POSES, GESTURES, CAST, BODY, BODIES: Object.keys(BODY) };
 })();

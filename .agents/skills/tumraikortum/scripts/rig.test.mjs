@@ -83,3 +83,16 @@ test('gestures add on top and must exist', () => {
   assert.equal(R.act(2, [[0, 'idle']], { alive: false, gestures: [[0, 'jump']] }).bob, 0);
   assert.throws(() => R.act(0.1, [[0, 'idle']], { gestures: [[0, 'moonwalk']] }), /unknown gesture moonwalk/);
 });
+
+test('reach IK: the wrist lands on the target (both sides), and points at one out of reach', () => {
+  const ua = 120, fa = 110, x0 = 80, y0 = -500;
+  const wrist = (a, el, d) => { const ex = x0 * d + d * Math.sin(a) * ua, ey = y0 + Math.cos(a) * ua; return [ex + d * Math.sin(a + el) * fa, ey + Math.cos(a + el) * fa]; };
+  for (const d of [-1, 1]) for (const [tx, ty] of [[200, -420], [40, -650], [-60, -560], [150, -330]]) {
+    const T = [tx * d, ty], [a, el] = R.ik(x0 * d, y0, T[0], T[1], d, ua, fa), [wx, wy] = wrist(a, el, d);
+    assert.ok(Math.hypot(wx - T[0], wy - T[1]) < 0.5, `side ${d} target ${T}: wrist at ${wx.toFixed(1)},${wy.toFixed(1)}`);
+    const phi = Math.atan2(d * (T[0] - x0 * d), T[1] - y0); // the other solution's shoulder is at 2·phi − a
+    assert.ok(Math.cos(a) >= Math.cos(2 * phi - a) - 1e-9, 'the elbow is the lower of the two solutions');
+  }
+  const [a, el] = R.ik(x0, y0, x0 + 1000, y0, 1, ua, fa);
+  assert.ok(Math.abs(a - Math.PI / 2) < 0.01 && Math.abs(el) < 0.1, `out of reach: a=${a} el=${el}`);
+});

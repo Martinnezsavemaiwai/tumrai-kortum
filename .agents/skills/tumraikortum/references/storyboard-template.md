@@ -12,9 +12,9 @@ Copy into `<episode>/STORYBOARD.md`. Times are seconds; each row is one shot and
 - shot Y: …
 
 ## Shot list
-| # | time | picture / acting | shot · on · move | transition | Thai VO | SFX |
+| # | time | picture / acting | shot · on · move | transition | Thai VO (tag · take · speed) | SFX |
 |---|---|---|---|---|---|---|
-| 1 | 0:00–0:04 | … | CU · mali · static | (open) | … | boom |
+| 1 | 0:00–0:04 | … | CU · mali · static | (open) | … ([whispers] · creative · 0.85) | boom |
 | … |
 
 ## Scenes (who stands where: the 180° line)

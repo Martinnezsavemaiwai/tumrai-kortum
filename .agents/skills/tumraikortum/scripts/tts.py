@@ -51,9 +51,23 @@ def call(path, key, body=None):
 
 def shots(ep):
     """SHOTS from score.js: [{t, th, tag?, voice?, say?}] (say = how to pronounce th when the subtitle has digits/abbreviations) for every shot with a Thai line."""
-    js = "const s=require('./score');console.log(JSON.stringify(s.SHOTS.map(x=>({t:x.t,th:x.th,tag:x.tag||'',voice:x.voice||'',say:x.say||''}))))"
+    js = ("const s=require('./score');console.log(JSON.stringify(s.SHOTS.map(x=>({t:x.t,th:x.th,tag:x.tag||'',voice:x.voice||'',"
+          "say:x.say||'',take:x.take||'',speed:x.speed??null}))))")
     out = subprocess.run(["node", "-e", js], cwd=ep, capture_output=True, text=True, check=True).stdout
     return [s for s in json.loads(out) if s["th"]]
+
+
+TAKES = {"creative": 0.0, "natural": 0.5, "robust": 1.0}  # eleven_v3's stability presets: wide emotion … steady
+
+
+def settings(s):
+    """voice_settings for one line from its performance cues (take, speed); exits on a bad cue before any credit is spent."""
+    take, speed = s.get("take") or "natural", s.get("speed")
+    if take not in TAKES:
+        sys.exit(f"line at {s['t']}s: take {take!r} is not one of {', '.join(TAKES)}")
+    if speed is not None and not (isinstance(speed, (int, float)) and 0.7 <= speed <= 1.2):
+        sys.exit(f"line at {s['t']}s: speed {speed!r} must be 0.7–1.2")
+    return {"stability": TAKES[take], "similarity_boost": 0.8, **({"speed": speed} if speed is not None else {})}
 
 
 def shown(th):
@@ -94,6 +108,14 @@ def selftest():
     assert char_times('a"b', chars, st, [x + 0.1 for x in st]) == [1.1, 1.2, 1.2, 1.3], char_times('a"b', chars, st, st)
     assert char_times("xyz", list("abc"), [0, 1, 2], [1, 2, 3]) is None  # nothing matches
     assert shown("*คำ*\nสอง") == "คำสอง"
+    assert settings({"t": 1}) == {"stability": 0.5, "similarity_boost": 0.8}
+    assert settings({"t": 1, "take": "creative", "speed": 0.85}) == {"stability": 0.0, "similarity_boost": 0.8, "speed": 0.85}
+    for bad in ({"take": "loud"}, {"speed": 1.5}, {"speed": "slow"}):
+        try:
+            settings({"t": 1, **bad})
+            raise AssertionError(f"{bad} should be refused")
+        except SystemExit:
+            pass
     print("tts.py selftest ok")
 
 
@@ -121,9 +143,12 @@ def main():
             sys.exit(f"lines at {seen[name(s).name]}s and {s['t']}s both map to voice/{name(s).name}: move one at least 1 s away")
         seen[name(s).name] = s["t"]
     todo = [s for s in lines if not name(s).exists()]
+    for s in lines:
+        settings(s)  # every cue checked up front, cached lines too
     if "--dry" in sys.argv:  # also the cost check before a long episode: ElevenLabs bills characters
         for s in lines:
-            print(f"{s['t']:>7}  {'cached ' if name(s).exists() else 'NEW    '}{said(s)!r}")
+            cue = " ".join(x for x in (s["take"], f"x{s['speed']}" if s["speed"] is not None else "") if x)
+            print(f"{s['t']:>7}  {'cached ' if name(s).exists() else 'NEW    '}{said(s)!r}{f'  ({cue})' if cue else ''}")
         new = sum(len(said(s)) for s in todo)
         print(f"\n{len(lines)} lines, {sum(len(said(s)) for s in lines)} characters in all; to generate now: {len(todo)} lines, {new} characters"
               f" (free plan ≈ 10,000 / month)")
@@ -133,7 +158,7 @@ def main():
     for s in todo:
         f = name(s)
         text = said(s)
-        body = {"text": text, "model_id": MODEL, "voice_settings": {"stability": 0.5, "similarity_boost": 0.8}}
+        body = {"text": text, "model_id": MODEL, "voice_settings": settings(s)}
         r = json.loads(call(f"/text-to-speech/{s['voice'] or voice}/with-timestamps?output_format=mp3_44100_128", key, body))
         f.write_bytes(base64.b64decode(r["audio_base64"]))
         a = r.get("alignment") or {}
