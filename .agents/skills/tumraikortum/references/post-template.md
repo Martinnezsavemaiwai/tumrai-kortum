@@ -22,6 +22,7 @@ Same no-spoiler rule as the cover: the caption may say what the first 3 seconds 
 - Cover: out/cover-<episode>.png
 - Turn on **AI-generated content** label (voices are AI)
 - Voice credit in the description: "Voice: ElevenLabs" (free-plan audio)
+- If film.js uses `Moves.play`: "Motion capture: CMU Graphics Lab (mocap.cs.cmu.edu)"
 
 ## Reels / Shorts
 Same caption + hashtags (Reels: up to ~5 tags read best). Shorts title ≤ 100 chars: "<title> (ตอนที่ n) #shorts"

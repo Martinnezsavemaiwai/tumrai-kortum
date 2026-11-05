@@ -76,7 +76,8 @@ subagents (Codex) follow the same files as checklists in a separate pass.
 - `scripts/tts.py` — Thai VO for every shot line in an episode's `score.js` (ElevenLabs v3; `--dry` = character count before spending credits; `--voices` lists usable voices).
 - `scripts/render-long.mjs` — long videos: render each chapter to `out/parts/` (resumable, `--redo id`), join, mux, SRT, YouTube chapters.
 - `scripts/setup-fonts.mjs` — download Kanit + the genre's Thai fonts (all SIL OFL) into an episode's `assets/fonts/`.
-- `kit/rig.js` — skeleton character rig: bodies anime / cartoon / chibi / explainer / puppet, finger hands, `R.POSES`, `R.act` (follow-through, blink-covered expression swaps, breathing/blinks per `seed`, hair sway, `gestures`), `R.walk`, `R.CAST`, `R.screen` (lit cloth for หนังตะลุง).
+- `kit/rig.js` — skeleton character rig: bodies anime / cartoon / chibi / explainer / puppet, finger hands, `R.POSES`, `R.act` (follow-through, blink-covered expression swaps, breathing/blinks per `seed`, hair sway, `gestures`), `R.walk`, `reachL`/`reachR` (IK), `R.CAST`, `R.screen` (lit cloth for หนังตะลุง).
+- `kit/moves.js` — motion-capture clips (CMU) as rig poses: `Moves.play(t - start, name, { base: R.act(…), body })` fades in from the pose and back out; jacks, side_bend, squat, wave, laugh, scared, jump, argue, reach_up, stretch. `scripts/mocap.mjs` adds/re-cuts clips (`--list`, `--rebuild`). Front view only.
 - `kit/chapters.js` — `Chapters.timeline/total/draw/card/progress/youtube` for long videos (node + browser).
 - `kit/explainer.js` — props for สรุปหนังสือ/explainer shorts (`X.bookBadge`, `stopwatch`, `split`, `badge`, `chart`, `crowd`, `povHands`).
 - `kit/art.js` — drawing styles ink · woodcut · crayon · manga (+ `G.grade`), in addition to the engine styles listed in the genre menu.
