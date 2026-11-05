@@ -32,7 +32,8 @@
 - Bed: `I.padNote` low detuned drone (A1, A#1, E2), `I.strings` high tension from the odd-thing shot on.
 - Party: `I.musicBox` lullaby that slowly detunes; start it after any nearby hit.
 - Events from `ev`: `I.pop`, `I.ting`, `I.bell`, `I.woodTick`, `I.tvClick` (shutter), `I.noiseSweep` (whooshes), `I.subBoom` + `I.thud` (hits), `I.heartbeat`, `I.pulse` hum gated by `SCORE.lightOn(t)`.
-- VO: `MIX.loadAudio(file, { at: t + VO_LAG, length: DURATION }).mixInto(vo, 1)`; `MIX.duck([beds], vo, { depth: 0.55 })`.
+- VO: `MIX.loadAudio(file, { at: t + VO_LAG, length: DURATION }).mixInto(vo, 1)`; `MIX.duck([beds], vo, { depth: 0.55 })`. Name the file like tts.py: `String(Math.floor(s.t + 0.5)).padStart(3, '0')` (or `require('./kit/lipsync').file(__dirname, s.t)`).
+- Lip-sync: `require('./kit/lipsync').write(__dirname, SHOTS, { lag: VO_LAG, length: DURATION })` → `out/mouth.json`, one mouth track per SHOTS `who` (rows without one are `narr`: nobody's mouth). In film.js: `S.mouth = await Studio.loadJSON('out/mouth.json')` in `init()`, then `talk: Kit.talk(S.mouth, 'nok', t)` in that character's `R.draw`. A character's mouth moves only on its own lines; re-run song.js after new voice lines.
 - Gain table: voice on top (`vo: 2.0`), music box ~0.45, drone ~0.7, hits ~0.6. Master `LUFS=-14`.
 - Measure: `STEMS=1 node song.js && node engine/tools/levels.js out/stem-*.wav`.
 
