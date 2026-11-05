@@ -143,6 +143,17 @@
     }
   };
 
+  // lip-sync: how open `who`'s mouth is at t (0…1) from out/mouth.json (kit/lipsync.js in song.js); 0 when there
+  // is no track. R.draw(ctx, { ...pose, talk: Kit.talk(S.mouth, 'nok', t) })
+  Kit.talk = (mouth, who, t) => {
+    const m = mouth && mouth.who && mouth.who[who];
+    if (!m) return 0;
+    const u = t * mouth.fps, i = Math.floor(u);
+    if (i < 0 || i >= m.open.length) return 0;
+    const a = m.open[i], b = m.open[Math.min(m.open.length - 1, i + 1)];
+    return a + (b - a) * (u - i);
+  };
+
   // subs: [{ t, end, text ('\n' line breaks), en, red, times? }] — the shape score.js already builds
   Kit.subtitles = (ctx, t, subs, o = {}) => {
     const sub = subs.find((x) => t >= x.t && t < x.end);
