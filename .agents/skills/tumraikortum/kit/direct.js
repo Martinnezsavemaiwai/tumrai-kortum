@@ -53,7 +53,8 @@
     const raw = (ty) => {
       if (ty === 'EWS' || ty === 'WS') return (H * (ty === 'WS' ? 0.5 : 0.2)) / figH;
       // whatever the type, the chin stays above the subtitles (L.face): a cap for faces with a long eye-to-chin
-      const chinCap = ty === 'ECU' ? ((L.face - ecuAt) * H) / (low('chin') - ecuY) :((L.face - L.eye) * H) / (low('chin') - eye);
+      const faceLimit = L.face * H - 1;
+      const chinCap = ty === 'ECU' ? (faceLimit - ecuAt * H) / (low('chin') - ecuY) :(faceLimit - L.eye * H) / (low('chin') - eye);
       if (ty === 'FS') return Math.min(chinCap, (H * (L.floor - L.eye)) / (low('feet') - eye));
       if (ty === 'ECU') return Math.min(chinCap, (S * 0.4) / (a.chin - a.eye)); // eyes to chin = 40 % of the short side, on every face shape
       const cut = { CU: 'chest', MCU: 'mid', MS: 'waist', MLS: 'knee' }[ty], head = { CU: 0.62, MCU: 0.45 }[ty] || Infinity; // big heads (chibi) must fit

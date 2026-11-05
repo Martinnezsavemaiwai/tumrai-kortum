@@ -3,7 +3,7 @@
 //
 //   R.draw(ctx, { x, y, s: 1, body: 'anime', who: R.CAST.mali, t, ...R.act(t, [[0, 'idle'], [2, 'wave']]) });
 //
-// Bodies: anime (1:6.5, big glossy eyes, spiky bangs) · cartoon (rubber-hose limbs, white 4-finger gloves) ·
+// Bodies: anime (1:6.5, big glossy eyes, spiky bangs) · cartoon (rubber-hose limbs, expressive hands) ·
 // puppet (หนังตะลุง: profile silhouette on a lit screen, perforated, rods to the hands) · chibi (big head, but a
 // neck, elbows and fingers). Feet at (x, y); s = 1 is 1000 px tall. Every body takes the same pose fields, so
 // poses, R.act and R.walk work for all of them, and every line goes through G.* so all drawing styles apply.
@@ -35,13 +35,24 @@
     return out;
   };
   const mirror = (ctrl) => ctrl.map(([u, v]) => [-u, v]).reverse();
+  // an open smooth curve (Catmull-Rom) through absolute points: lash lines, lids, bowed rubber-hose limbs
+  const curve = (P, n = 6) => {
+    const out = [];
+    for (let i = 0; i < P.length - 1; i++) {
+      const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+      for (let k = 0; k < n; k++) { const t = k / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map((j) => 0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3))); }
+    }
+    out.push(P[P.length - 1]);
+    return out;
+  };
   // one light from the top left: how strong the far-side shadow is per body (puppets are lit from behind)
   const SHADE = { anime: 0.16, chibi: 0.14, cartoon: 0.1, explainer: 0.28 };
 
   // ---------- proportions (units: the figure is 1000 tall at s = 1) ----------
   const BODY = {
-    anime: { head: [62, 78], neck: 34, torso: 300, sw: 82, ww: 58, hw: 64, ua: 185, fa: 165, hand: 62, thigh: 245, shin: 240, limb: 30, leg: 38, foot: 40 },
-    cartoon: { head: [140, 140], neck: 18, torso: 230, sw: 95, ww: 80, hw: 75, ua: 170, fa: 160, hand: 78, thigh: 175, shin: 175, limb: 26, leg: 30, foot: 62 },
+    // anime: shoulders ~1.5 head widths, a waist that narrows, a jaw (see `front`); cartoon: a smaller head, a pear torso, thicker noodle limbs
+    anime: { head: [60, 76], neck: 34, torso: 300, sw: 92, ww: 56, hw: 66, ua: 185, fa: 165, hand: 62, thigh: 245, shin: 240, limb: 30, leg: 38, foot: 40 },
+    cartoon: { head: [122, 116], neck: 22, torso: 250, sw: 84, ww: 64, hw: 88, ua: 175, fa: 160, hand: 64, thigh: 175, shin: 175, limb: 30, leg: 32, foot: 62 },
     chibi: { head: [190, 175], neck: 30, torso: 230, sw: 88, ww: 78, hw: 74, ua: 120, fa: 110, hand: 52, thigh: 120, shin: 120, limb: 36, leg: 42, foot: 44 },
     explainer: { head: [108, 104], neck: 24, torso: 250, sw: 86, ww: 72, hw: 70, ua: 150, fa: 140, hand: 54, thigh: 170, shin: 165, limb: 36, leg: 42, foot: 46 },
     puppet: { head: [70, 80], neck: 40, torso: 320, sw: 40, ww: 34, hw: 46, ua: 220, fa: 220, hand: 80, thigh: 230, shin: 220, limb: 22, leg: 26, foot: 60 },
@@ -84,19 +95,18 @@
 
   // ---------- hands: fingers point along the forearm; side −1 = screen-left hand ----------
   function hand(ctx, x, y, ang, side, kind, size, skin, body, seed) {
-    const glove = body === 'cartoon', col = glove ? '#FFFFFF' : skin, puppet = body === 'puppet';
+    const puppet = body === 'puppet';
     ctx.save(); ctx.translate(x, y); ctx.rotate(-ang * side); ctx.scale(side, 1); // local: fingers grow toward +y, thumb toward −x
     const s = size, fl = { lw: 3 };
     const finger = (fx, fy, a, len, w, curl = 0) => {
       const p = [[fx, fy]], n = 3;
       for (let i = 1; i <= n; i++) { const aa = a + curl * i / n; const prev = p[p.length - 1]; p.push([prev[0] + Math.sin(aa) * len / n, prev[1] + Math.cos(aa) * len / n]); }
-      G.limb(ctx, p, { color: col, lw: w, outline: 3, seed: seed + Math.round(fx) });
+      G.limb(ctx, p, { color: skin, lw: w, outline: 3, seed: seed + Math.round(fx) });
     };
-    const nF = glove ? 3 : 4, fw = s * (glove ? 0.3 : 0.2), base = s * 0.38;
-    const spread = (i) => (i - (nF - 1) / 2) * (glove ? 0.28 : 0.2);
-    const fx = (i) => (i - (nF - 1) / 2) * s * (glove ? 0.26 : 0.19);
+    const nF = 4, fw = s * 0.2, base = s * 0.38;
+    const spread = (i) => (i - (nF - 1) / 2) * 0.2;
+    const fx = (i) => (i - (nF - 1) / 2) * s * 0.19;
     const ext = { open: [1, 1, 1, 1], relax: [1, 1, 1, 1], point: [1, 0, 0, 0], peace: [1, 1, 0, 0], fist: [0, 0, 0, 0], thumb: [0, 0, 0, 0] }[kind] || [1, 1, 1, 1];
-    if (glove) ext.splice(2, 1);
     // fingers behind the palm first (extended ones), palm, then folded knuckles + thumb on top
     for (let i = 0; i < nF; i++) {
       const k = nF - 1 - i; // index finger nearest the thumb
@@ -104,43 +114,52 @@
       const curl = kind === 'relax' ? 0.5 : puppet ? -0.9 : 0;
       finger(fx(i), base * 0.7, spread(i) * (kind === 'open' || puppet ? 1.6 : kind === 'peace' ? 1.4 : 0.6), s * (puppet ? 0.95 : 0.6), fw, curl);
     }
-    ell(ctx, 0, s * 0.1, s * (glove ? 0.42 : 0.36), s * (glove ? 0.42 : 0.38), col, seed + 1, fl);
-    if (ext.some((e) => !e)) for (let i = 0; i < nF; i++) { const k = nF - 1 - i; if (!ext[k]) ell(ctx, fx(i), s * 0.42, fw * 0.62, fw * 0.55, col, seed + 10 + i, fl); } // folded knuckles
+    ell(ctx, 0, s * 0.1, s * 0.36, s * 0.38, skin, seed + 1, fl);
+    if (ext.some((e) => !e)) for (let i = 0; i < nF; i++) { const k = nF - 1 - i; if (!ext[k]) ell(ctx, fx(i), s * 0.42, fw * 0.62, fw * 0.55, skin, seed + 10 + i, fl); } // folded knuckles
     if (kind === 'thumb') finger(-s * 0.32, s * 0.1, Math.PI, s * 0.42, fw * 1.1);
     else finger(-s * 0.3, s * 0.05, kind === 'fist' || kind === 'point' || kind === 'peace' ? 0.9 : -0.9, s * 0.38, fw * 1.1);
-    if (glove) { ctx.save(); ctx.translate(0, -s * 0.28); sh(ctx, G.rrPts(-s * 0.36, -s * 0.12, s * 0.72, s * 0.24, s * 0.1), '#FFFFFF', seed + 30, fl); ctx.restore(); } // cuff
     ctx.restore();
   }
 
   // ---------- eyes ----------
-  function animeEye(ctx, cx, cy, side, o, c, seed) {
-    const e = o.eyes || 'normal', lx = (o.look || 0) * 6, ly = (o.lookY || 0) * 5;
-    const blink = o.blink ? Math.max(0.08, 1 - o.blink) : 1;
+  // anime eye: an almond (inner corner low, outer corner flicked), an iris the upper lid half covers, a lid shadow,
+  // a crease, ONE clean highlight. Lids for angry/sly/sad are slanted cuts (inner, outer as a fraction of h); u scales to the head.
+  function animeEye(ctx, cx, cy, side, o, c, seed, u = 1) {
+    const e = o.eyes || 'normal', blink = o.blink ? Math.max(0.08, 1 - o.blink) : 1;
+    const w = 19 * u, h0 = 21 * u * (e === 'shock' || e === 'wide' ? 1.14 : 1), h = h0 * blink;
     if (e === 'happy' || e === 'closed' || blink < 0.2) {
-      const up = e === 'happy' ? -1 : 1;
-      G.line(ctx, [[cx - 19, cy + 2], [cx, cy + 2 + up * 11], [cx + 19, cy + 2]], { color: INK, lw: 5, seed });
+      const up = e === 'happy', y = cy + (up ? 3 : -3) * u;
+      G.line(ctx, curve([[cx - w, y], [cx, up ? cy - h0 * 0.62 : cy + h0 * 0.4], [cx + w, y]]), { color: INK, lw: 5 * u, seed });
+      G.line(ctx, [[cx + side * w, y], [cx + side * (w + 6 * u), y - 4 * u]], { color: INK, lw: 3 * u, seed: seed + 1, amp: 0.3 });
       return;
     }
-    const w = 22, h = 25 * blink, top = e === 'sly' ? 0.45 : e === 'angry' ? 0.75 : 1;
+    const UP = [[-1, 0.2], [-0.55, -0.72], [0.05, -1], [0.55, -0.86], [1.02, -0.22]]; // the upper lid, inner → outer corner
+    const M = (pts) => pts.map(([a, b]) => [cx + a * side * w, cy + b * h]);
+    const eye = c.eye || '#5A3A2A', cut = { angry: [-0.2, -0.85], sly: [0, 0.05], sad: [-0.95, -0.12] }[e];
     ctx.save();
-    ctx.beginPath(); ctx.ellipse(cx, cy, w, h, 0, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill();
-    ctx.clip();
-    if (top < 1) { ctx.fillStyle = c.skin; ctx.fillRect(cx - w - 2, cy - h - 2, 2 * w + 4, 2 * h * (1 - top) * 0.9); }
-    const ir = e === 'shock' ? 7 : 15, iy = cy + 3 + ly;
-    const g = ctx.createLinearGradient(0, iy - ir * 1.3, 0, iy + ir * 1.3);
-    g.addColorStop(0, shade(c.eye || '#5A3A2A', -0.45)); g.addColorStop(1, shade(c.eye || '#5A3A2A', 0.25));
-    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx + lx, iy, ir, ir * 1.3, 0, 0, Math.PI * 2); ctx.fill();
-    dot(ctx, cx + lx, iy + 1, ir * 0.45, INK);
-    if (e !== 'shock') { dot(ctx, cx + lx - ir * 0.4, iy - ir * 0.55, ir * 0.38, '#FFFFFF'); dot(ctx, cx + lx + ir * 0.4, iy + ir * 0.5, ir * 0.16, '#FFFFFF'); }
+    ctx.beginPath(); G.path(ctx, spline([...UP, [1.1, 0.02], [0.7, 0.5], [0.05, 0.8], [-0.55, 0.6]].map(([a, b]) => [a * side, b]), cx, cy, w, h, 5), true);
+    ctx.fillStyle = '#F8F3F1'; ctx.fill(); ctx.clip();
+    const ir = w * (e === 'shock' ? 0.36 : e === 'angry' ? 0.5 : 0.58), irh = ir * (e === 'shock' ? 1.1 : 1.32), room = w - ir - 2;
+    const ix = cx + Math.max(-room, Math.min(room, (o.look || 0) * 5 * u)), iy = cy + h * (e === 'sad' ? 0.2 : 0.07) + (o.lookY || 0) * 4 * u;
+    const g = ctx.createLinearGradient(0, iy - irh, 0, iy + irh);
+    g.addColorStop(0, shade(eye, -0.5)); g.addColorStop(1, shade(eye, 0.3));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(ix, iy, ir, irh, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = shade(eye, -0.62); ctx.lineWidth = 2; ctx.stroke(); // limbal ring
+    ctx.fillStyle = INK; ctx.beginPath(); ctx.ellipse(ix, iy + 1, ir * 0.42, irh * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+    if (e !== 'shock') { dot(ctx, ix - ir * 0.36, iy - irh * 0.42, ir * 0.3, '#FFFFFF'); dot(ctx, ix + ir * 0.42, iy + irh * 0.48, ir * 0.13, 'rgba(255,255,255,0.8)'); }
+    const sg = ctx.createLinearGradient(0, cy - h, 0, cy - h * 0.2); sg.addColorStop(0, 'rgba(60,30,50,0.32)'); sg.addColorStop(1, 'rgba(60,30,50,0)'); // the upper lid shades the eye
+    ctx.fillStyle = sg; ctx.fillRect(cx - w - 4, cy - h - 4, 2 * w + 8, h * 0.9);
+    if (cut) { ctx.fillStyle = c.skin; ctx.beginPath(); ctx.moveTo(cx - side * w * 1.2, cy + cut[0] * h); ctx.lineTo(cx + side * w * 1.2, cy + cut[1] * h); ctx.lineTo(cx + side * w * 1.2, cy - h - 6); ctx.lineTo(cx - side * w * 1.2, cy - h - 6); ctx.closePath(); ctx.fill(); }
     ctx.restore();
-    // upper lash line, thick, flicked at the outer corner; thin lower lash
-    const lid = top < 1 ? cy - h + 2 * h * (1 - top) * 0.9 : cy - h;
-    const tilt = e === 'angry' ? 7 : e === 'sad' ? -6 : 0; // + = inner corner down (the points below are already mirrored by side)
-    const lash = top < 1 // a lid cut across the eye stays straight; an open eye's lash follows the eye's curve (a flat bar reads as glasses)
-      ? [[cx - side * w - 2, lid + 4 + tilt], [cx, lid - 2], [cx + side * w + 4, lid + 3 - tilt], [cx + side * (w + 10), lid - 3 - tilt]]
-      : [[cx - side * w * 0.95, cy - h * 0.3 + tilt], [cx - side * w * 0.55, cy - h * 0.86 + tilt * 0.5], [cx, lid - 1], [cx + side * w * 0.6, cy - h * 0.84], [cx + side * w * 1.02, cy - h * 0.32 - tilt], [cx + side * (w + 9), cy - h * 0.62 - tilt]];
-    G.line(ctx, lash, { color: INK, lw: 5, seed: seed + 1, amp: 0.4 });
-    G.line(ctx, [[cx - side * 8, cy + h - 1], [cx + side * w * 0.8, cy + h - 3]], { color: INK, lw: 2, seed: seed + 2, amp: 0.3 });
+    // upper lash: follows the almond (a flat bar reads as glasses); a cut lid is straight. Flick at the outer corner, thin lower lash, crease
+    const fy = cut ? cut[1] : -0.22;
+    if (cut) G.line(ctx, [[cx - side * w * 1.05, cy + cut[0] * h], [cx + side * w * 1.05, cy + cut[1] * h]], { color: INK, lw: 5 * u, seed: seed + 1, amp: 0.4 });
+    else {
+      G.line(ctx, curve(M(UP)), { color: INK, lw: 5.5 * u, seed: seed + 1, amp: 0.4 });
+      G.line(ctx, curve(M([[-0.7, -1.12], [0, -1.32], [0.85, -1.05]])), { color: shade(c.skin, -0.38), lw: 2, alpha: 0.7, seed: seed + 4, amp: 0.2 });
+    }
+    G.line(ctx, [[cx + side * w * 1.05, cy + fy * h], [cx + side * (w + 6 * u), cy + fy * h - 3.5 * u]], { color: INK, lw: 3 * u, seed: seed + 3, amp: 0.3 });
+    G.line(ctx, curve(M([[-0.45, 0.64], [0.1, 0.82], [0.75, 0.45]])), { color: INK, lw: 1.8, alpha: 0.55, seed: seed + 2, amp: 0.3 });
   }
   function dotEye(ctx, cx, cy, side, o, c, seed, r) { // chibi: big dark glossy ovals
     const e = o.eyes || 'normal', blink = o.blink ? Math.max(0.08, 1 - o.blink) : 1;
@@ -152,16 +171,21 @@
     dot(ctx, cx + lx - r * 0.3, cy - r * 0.4 * blink, r * 0.3, '#FFFFFF'); dot(ctx, cx + lx + r * 0.3, cy + r * 0.2 * blink, r * 0.12, '#FFFFFF');
     if (e === 'angry' || e === 'sad') { const k = e === 'angry' ? 1 : -1; G.line(ctx, [[cx - side * r, cy - r * 1.3 + k * 8], [cx + side * r, cy - r * 1.3 - k * 8]], { color: INK, lw: 5, seed: seed + 3 }); } // angry: inner end down; sad: inner end up
   }
-  function cartoonEye(ctx, cx, cy, side, o, seed) { // tall white ovals, pupils that touch
+  // cartoon eye: a tall white oval; the pupil sits low, turns toward the nose (pupils touch) and carries a spark. Angry/sly/sad are
+  // skin-coloured lids cut across the oval (inner, outer as a fraction of the half-height), so the mood reads under the fringe. u scales to the head.
+  function cartoonEye(ctx, cx, cy, side, o, c, seed, u = 1) {
     const e = o.eyes || 'normal', blink = o.blink ? Math.max(0.08, 1 - o.blink) : 1;
-    if (e === 'happy' || e === 'closed' || blink < 0.2) { G.line(ctx, [[cx - 24, cy], [cx, cy + (e === 'happy' ? -18 : 12)], [cx + 24, cy]], { color: INK, lw: 7, seed }); return; }
-    const big = e === 'shock' ? 1.25 : 1;
-    ell(ctx, cx, cy, 30 * big, 44 * big * blink, '#FFFFFF', seed, { lw: 5 });
-    const lx = (o.look || 0) * 12 - side * 8, ly = (o.lookY || 0) * 12 + 8;
-    if (blink > 0.4) ell(ctx, cx + lx, cy + ly, e === 'shock' ? 6 : 12, e === 'shock' ? 8 : 18, INK, seed + 1, { lw: 0 });
-    if (e === 'angry') G.line(ctx, [[cx - side * 30, cy - 34], [cx + side * 32, cy - 54]], { color: INK, lw: 8, seed: seed + 2 }); // inner end down
-    if (e === 'sly') G.line(ctx, [[cx - side * 30, cy - 22], [cx + side * 32, cy - 4]], { color: INK, lw: 8, seed: seed + 2 }); // heavy lid
-    if (e === 'sad') G.line(ctx, [[cx - side * 30, cy - 60], [cx + side * 30, cy - 46]], { color: INK, lw: 6, seed: seed + 3 }); // inner end up
+    if (e === 'happy' || e === 'closed' || blink < 0.2) { G.line(ctx, curve([[cx - 24 * u, cy], [cx, cy + (e === 'happy' ? -16 : 10) * u], [cx + 24 * u, cy]]), { color: INK, lw: 7 * u, seed }); return; }
+    const big = e === 'shock' ? 1.22 : e === 'wide' ? 1.1 : 1, rx = 27 * u * big, ry = 40 * u * big * blink;
+    ell(ctx, cx, cy, rx, ry, '#FFFFFF', seed, { lw: 5 });
+    ctx.save(); ctx.beginPath(); ctx.ellipse(cx, cy, Math.max(1, rx - 1), Math.max(1, ry - 1), 0, 0, Math.PI * 2); ctx.clip(); // pupil and lid stay inside the eye
+    const pw = (e === 'shock' ? 6 : 11) * u, ph = (e === 'shock' ? 8 : 16) * u, room = rx - pw - 3;
+    const lx = Math.max(-room, Math.min(room, (o.look || 0) * 11 * u - side * 7 * u)), ly = (o.lookY || 0) * 10 * u + 6 * u;
+    if (blink > 0.4) { ell(ctx, cx + lx, cy + ly, pw, ph, INK, seed + 1, { lw: 0 }); if (e !== 'shock') dot(ctx, cx + lx - 3.5 * u, cy + ly - 6 * u, 3.8 * u, '#FFFFFF'); }
+    const cut = { angry: [-0.3, -0.85], sly: [-0.4, -0.12], sad: [-0.95, -0.2] }[e], xi = cx - side * rx * 1.1, xo = cx + side * rx * 1.1;
+    if (cut) { ctx.fillStyle = c.skin; ctx.beginPath(); ctx.moveTo(xi, cy + cut[0] * ry); ctx.lineTo(xo, cy + cut[1] * ry); ctx.lineTo(xo, cy - ry - 8); ctx.lineTo(xi, cy - ry - 8); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    if (cut) G.line(ctx, [[cx - side * rx, cy + cut[0] * ry], [cx + side * rx, cy + cut[1] * ry]], { color: INK, lw: 7 * u, seed: seed + 2 });
   }
 
   function mouth(ctx, x, y, w, o, seed, c) {
@@ -242,12 +266,16 @@
     // the crown cap plus a fringe of spiky locks down to the brows
     const cap = [];
     for (let i = 0; i <= 16; i++) { const a = Math.PI * (1.02 + 0.96 * i / 16); cap.push([hx + Math.cos(a) * rx * 1.1, hy - ry * 0.05 + Math.sin(a) * ry * 1.08]); }
-    const n = c.hairStyle === 'spiky' ? 6 : 5, brow = hy - ry * (body === 'chibi' ? 0.25 : 0.3);
+    const n = c.hairStyle === 'spiky' ? 6 : 5, brow = hy - ry * (body === 'chibi' ? 0.25 : body === 'cartoon' ? 0.78 : 0.3); // a cartoon's tall eyes need the fringe high, or it covers them
+    // a high fringe sits where the crown is narrower: stay inside the arc and step in through solid temples, or the outline folds over itself
+    const high = body === 'cartoon', fw = high ? 0.7 : 1.08, notch = high ? 0.13 : 0.2;
+    if (high) cap.push([hx + rx * 0.86, hy - ry * 0.16], [hx + rx * fw, hy - ry * 0.52]);
     for (let i = n; i >= 0; i--) {
-      const u = i / n, x0 = hx + rx * 1.08 * (2 * u - 1);
-      cap.push([x0, brow + (i % 2 ? 0 : ry * (body === 'anime' ? 0.12 : 0.22)) + (c.hairStyle === 'spiky' ? ry * 0.08 : 0)]);
-      if (i > 0) cap.push([x0 - rx * 0.2, brow - ry * 0.12]);
+      const u = i / n, x0 = hx + rx * fw * (2 * u - 1);
+      cap.push([x0, brow + (i % 2 ? 0 : ry * (body === 'anime' ? 0.12 : body === 'cartoon' ? 0.16 : 0.22)) + (c.hairStyle === 'spiky' ? ry * 0.08 : 0)]);
+      if (i > 0) cap.push([x0 - rx * notch, brow - ry * 0.12]);
     }
+    if (high) cap.push([hx - rx * fw, hy - ry * 0.52], [hx - rx * 0.86, hy - ry * 0.16]);
     sh(ctx, cap, c.hair, seed);
     // side locks framing the face: tapered curves, down to the jaw for long hair and bobs
     const lock = { long: 0.95, bob: 1.02, twintail: 0.7, ponytail: 0.6 }[c.hairStyle] ?? 0.55;
@@ -258,7 +286,7 @@
     if (c.hairStyle === 'ponytail') ell(ctx, hx + rx * 0.62, hy - ry * 0.9, 14, 12, c.accent || '#E8506A', seed + 33, { lw: 3 }); // the hair tie
     if (c.hairStyle === 'spiky') for (let k = 0; k < 5; k++) { const a = Math.PI * (1.1 + k * 0.2); poly(ctx, [[hx + Math.cos(a - 0.12) * rx, hy + Math.sin(a - 0.12) * ry], [hx + Math.cos(a) * rx * 1.45, hy + Math.sin(a) * ry * 1.4], [hx + Math.cos(a + 0.12) * rx, hy + Math.sin(a + 0.12) * ry]], c.hair, seed + 10 + k); }
     // shine band
-    ctx.save(); ctx.globalAlpha = 0.35; G.line(ctx, [[hx - rx * 0.6, hy - ry * 0.72], [hx - rx * 0.1, hy - ry * 0.86], [hx + rx * 0.4, hy - ry * 0.78]], { color: shade(c.hair, 0.6), lw: 8, seed: seed + 20 }); ctx.restore();
+    ctx.save(); ctx.globalAlpha = 0.35; G.line(ctx, high ? [[hx - rx * 0.5, hy - ry * 0.96], [hx - rx * 0.1, hy - ry], [hx + rx * 0.4, hy - ry * 0.94]] : [[hx - rx * 0.6, hy - ry * 0.72], [hx - rx * 0.1, hy - ry * 0.86], [hx + rx * 0.4, hy - ry * 0.78]], { color: shade(c.hair, 0.6), lw: 8, seed: seed + 20 }); ctx.restore();
     if (c.hairStyle === 'twintail') for (const d of [-1, 1]) ell(ctx, hx + d * rx * 1.02, hy - ry * 0.55, 12, 12, c.accent || '#E8506A', seed + 30 + d, { lw: 3 });
   }
 
@@ -290,11 +318,11 @@
       const x0 = d * B.hw * 0.55, y0 = hipY + bob;
       const kx = x0 + d * Math.sin(hip) * B.thigh, ky = y0 + Math.cos(hip) * B.thigh;
       const ax = kx + d * Math.sin(hip - knee) * B.shin, ay = ky + Math.cos(hip - knee) * B.shin;
-      const pants = c.bottomStyle === 'pants' ? c.bottom : c.skin;
-      G.limb(ctx, [[x0, y0], [kx, ky], [ax, ay]], { color: pants, lw: B.leg, seed: seed + 50 + d });
-      if (c.bottomStyle === 'pants') G.limb(ctx, [[x0, y0], [kx, ky], [ax, ay - B.leg * 0.3]], { color: pants, lw: B.leg * 1.25, outline: 4, seed: seed + 52 + d });
-      if (c.bottomStyle === 'shorts') G.limb(ctx, [[x0, y0], [x0 + (kx - x0) * 0.72, y0 + (ky - y0) * 0.72]], { color: c.bottom, lw: B.leg * 1.6, outline: 4, seed: seed + 52 + d }); // above the knee
-      if (c.socks) G.limb(ctx, [[kx + (ax - kx) * 0.55, ky + (ay - ky) * 0.55], [ax, ay]], { color: c.socks, lw: B.leg * 1.08, seed: seed + 53 + d });
+      const pants = c.bottomStyle === 'pants' ? c.bottom : c.skin, kbx = kx + (body === 'cartoon' ? d * 9 : 0); // rubber-hose legs bow outward at the knee
+      G.limb(ctx, [[x0, y0], [kbx, ky], [ax, ay]], { color: pants, lw: B.leg, seed: seed + 50 + d });
+      if (c.bottomStyle === 'pants') G.limb(ctx, [[x0, y0], [kbx, ky], [ax, ay - B.leg * 0.3]], { color: pants, lw: B.leg * 1.25, outline: 4, seed: seed + 52 + d });
+      if (c.bottomStyle === 'shorts') G.limb(ctx, [[x0, y0], [x0 + (kbx - x0) * 0.72, y0 + (ky - y0) * 0.72]], { color: c.bottom, lw: B.leg * 1.6, outline: 4, seed: seed + 52 + d }); // above the knee
+      if (c.socks) G.limb(ctx, [[kbx + (ax - kbx) * 0.55, ky + (ay - ky) * 0.55], [ax, ay]], { color: c.socks, lw: B.leg * 1.08, seed: seed + 53 + d });
       if (body === 'cartoon') ell(ctx, ax + d * B.foot * 0.45, ay + B.foot * 0.15, B.foot, B.foot * 0.55, c.shoes || '#C83C4A', seed + 54 + d, { lw: 5 });
       else shoe(ctx, c, ax, ay, d, B, seed + 56 + d);
     }
@@ -307,8 +335,17 @@
     ctx.restore();
     // torso: shoulders → waist → hips, skirt over the hips
     const waistY = sy + B.torso * 0.62;
-    poly(ctx, [[-B.sw, sy + 8], [-B.sw * 0.6, sy - 6], [B.sw * 0.6, sy - 6], [B.sw, sy + 8], [B.ww, waistY], [B.hw, hipY + 10], [-B.hw, hipY + 10], [-B.ww, waistY]], c.top || '#6A8AB0', seed + 2, { hatch: true });
-    soft(ctx, [[-B.sw, sy + 8], [B.sw, sy + 8], [B.hw, hipY + 10], [-B.hw, hipY + 10]], c.top, SHADE[body]);
+    // cartoon: a pear (narrow shoulders, round hips); anime: sloped shoulders, a waist, softer hips — curved outlines. Others keep the straight cut.
+    const half = body === 'cartoon' ? [[B.sw * 0.5, sy - 6], [B.sw * 0.98, sy + 14], [B.ww * 1.12, sy + B.torso * 0.42], [B.hw * 1.06, hipY - B.torso * 0.16], [B.hw * 0.82, hipY + 14]]
+      : body === 'anime' ? [[B.sw * 0.3, sy - 9], [B.sw * 0.72, sy - 3], [B.sw, sy + 16], [B.sw * 0.92, sy + B.torso * 0.3], [B.ww, waistY], [B.hw * 1.02, hipY - 14], [B.hw * 0.9, hipY + 12]] : null;
+    if (half) {
+      const torso = spline([[0, sy - 10], ...half, [0, hipY + (body === 'cartoon' ? 20 : 16)], ...mirror(half)], 0, 0, 1, 1, 5);
+      sh(ctx, torso, c.top || '#6A8AB0', seed + 2, { hatch: true });
+      soft(ctx, torso, c.top, SHADE[body]);
+    } else {
+      poly(ctx, [[-B.sw, sy + 8], [-B.sw * 0.6, sy - 6], [B.sw * 0.6, sy - 6], [B.sw, sy + 8], [B.ww, waistY], [B.hw, hipY + 10], [-B.hw, hipY + 10], [-B.ww, waistY]], c.top || '#6A8AB0', seed + 2, { hatch: true });
+      soft(ctx, [[-B.sw, sy + 8], [B.sw, sy + 8], [B.hw, hipY + 10], [-B.hw, hipY + 10]], c.top, SHADE[body]);
+    }
     if (body === 'explainer') { if (c.jacket) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.25, sy - 4], [d * B.sw, sy + 8], [d * B.hw, hipY + 10], [d * B.hw * 0.3, hipY + 10]], c.jacket, seed + 5 + d); }
     if (c.bottomStyle === 'skirt') poly(ctx, [[-B.ww * 1.02, waistY], [B.ww * 1.02, waistY], [B.hw * 1.6, hipY + B.thigh * 0.55], [-B.hw * 1.6, hipY + B.thigh * 0.55]], c.bottom, seed + 3, { hatch: true });
     else if (c.bottom) poly(ctx, [[-B.ww, waistY], [B.ww, waistY], [B.hw, hipY + 16], [-B.hw, hipY + 16]], c.bottom, seed + 3);
@@ -347,9 +384,11 @@
     // head (tilts round the neck)
     ctx.save(); ctx.translate(0, neckTop); ctx.rotate(p.tilt); ctx.translate(0, -neckTop);
     if (body === 'cartoon') for (const d of [-1, 1]) ell(ctx, d * hrx * 0.98, hy + 6, hrx * 0.2, hry * 0.24, c.skin, seed + 9 + d);
-    const face = body === 'anime'
-      ? [...Array(25)].map((_, i) => { const a = Math.PI * 2 * i / 24; const yy = Math.sin(a); return [Math.cos(a) * hrx * (yy > 0 ? 1 - 0.32 * yy * yy : 1), hy + yy * hry * (yy > 0 ? 1.12 : 1)]; }) // pointed chin
-      : G.ellPts(0, hy, hrx, hry);
+    // anime: cheek → jaw angle → a narrow, slightly flat chin; cartoon: full cheeks and a soft chin instead of a balloon
+    const jaw = [[0.58, -0.92], [0.97, -0.45], [1.0, 0.08], [0.88, 0.58], [0.58, 0.98], [0.2, 1.13]], cheek = [[0.55, -0.92], [0.98, -0.38], [1.0, 0.2], [0.72, 0.8]];
+    const face = body === 'anime' ? spline([[0, -1], ...jaw, ...mirror(jaw)], 0, hy, hrx, hry, 5)
+      : body === 'cartoon' ? spline([[0, -1], ...cheek, [0, 1], ...mirror(cheek)], 0, hy, hrx, hry, 6)
+        : G.ellPts(0, hy, hrx, hry);
     sh(ctx, face, c.skin, seed + 11);
     soft(ctx, face, c.skin, body === 'explainer' ? 0.22 : SHADE[body]);
     if (c.hair && c.hairStyle !== 'bald') { // the fringe casts a soft shadow on the forehead
@@ -358,15 +397,15 @@
     }
     if (body === 'anime') for (const d of [-1, 1]) ell(ctx, d * hrx * 0.98, hy + 6, 8, 14, c.skin, seed + 12 + d, { lw: 3 });
     // eyes, brows, nose, mouth
-    const ey = hy + hry * (body === 'chibi' ? 0.12 : body === 'cartoon' ? -0.12 : 0.2), ex = hrx * (body === 'chibi' ? 0.42 : body === 'cartoon' ? 0.24 : body === 'explainer' ? 0.38 : 0.44);
+    const ey = hy + hry * (body === 'chibi' ? 0.12 : body === 'cartoon' ? -0.12 : 0.2), ex = hrx * (body === 'chibi' ? 0.42 : body === 'cartoon' ? 0.27 : body === 'explainer' ? 0.38 : 0.47), eu = hrx / (body === 'cartoon' ? 122 : 60); // eye size follows the head
     for (const d of [-1, 1]) {
-      if (body === 'anime') animeEye(ctx, d * ex, ey, d, p, c, seed + 20 + d);
-      else if (body === 'cartoon') cartoonEye(ctx, d * ex, ey, d, p, seed + 20 + d);
+      if (body === 'anime') animeEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, eu);
+      else if (body === 'cartoon') cartoonEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, eu);
       else dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * (body === 'explainer' ? 0.12 : 0.17));
-      if (c.glasses && body !== 'puppet') { const gr = hrx * 0.24; ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
+      if (c.glasses && body !== 'puppet') { const gr = hrx * (body === 'anime' ? 0.4 : body === 'cartoon' ? 0.29 : 0.24); ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
     }
     if (body === 'cartoon') { ell(ctx, 0, ey + hry * 0.38, hrx * 0.16, hry * 0.12, shade(c.skin, -0.18), seed + 30); mouth(ctx, 0, ey + hry * 0.62, hrx * 0.42, p, seed + 31, c); }
-    else if (body === 'anime') { G.line(ctx, [[2, ey + hry * 0.28], [-2, ey + hry * 0.34]], { color: shade(c.skin, -0.35), lw: 3, seed: seed + 32 }); mouth(ctx, 0, ey + hry * 0.5, hrx * 0.16, p, seed + 33, c); ctx.fillStyle = 'rgba(240,120,140,0.25)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.05, ey + hry * 0.32, 16, 6, 0, 0, Math.PI * 2); ctx.fill(); } }
+    else if (body === 'anime') { G.line(ctx, [[2, ey + hry * 0.28], [-2, ey + hry * 0.34]], { color: shade(c.skin, -0.35), lw: 3, seed: seed + 32 }); mouth(ctx, 0, ey + hry * 0.5, hrx * 0.16, p, seed + 33, c); ctx.fillStyle = 'rgba(240,120,140,0.16)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.05, ey + hry * 0.32, 14, 5, 0, 0, Math.PI * 2); ctx.fill(); } }
     else { mouth(ctx, 0, ey + hry * 0.42, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.2 : 0.12), p, seed + 34, c); /* a smirk/grin must read at phone size */ ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, 24, 12, 0, 0, Math.PI * 2); ctx.fill(); } }
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.2, ey + 10], [d * ex * 1.5, ey + 2]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
     if (c.mustache) { // two curls just above the mouth
@@ -386,8 +425,8 @@
     }
     // anime brows sit on top of the fringe (the style draws them through the hair); + tilt = inner end down
     if (body === 'anime' && p.eyes !== 'happy') for (const d of [-1, 1]) {
-      const tilt = p.eyes === 'angry' ? 9 : p.eyes === 'sad' || p.eyes === 'shock' ? -8 : 0;
-      G.line(ctx, [[d * ex * 0.55, ey - 50 + tilt], [d * ex * 0.92, ey - 56 + tilt * 0.3], [d * ex * 1.22, ey - 51 - tilt * 0.4]], { color: shade(c.hair || INK, -0.35), lw: 3, seed: seed + 26 + d }); // high and short: close to the lash line it reads as glasses
+      const tilt = p.eyes === 'angry' ? 9 : p.eyes === 'sad' || p.eyes === 'shock' ? -8 : p.eyes === 'wide' ? -4 : 0;
+      G.line(ctx, curve([[d * ex * 0.55, ey - 46 + tilt], [d * ex * 0.92, ey - 52 + tilt * 0.3], [d * ex * 1.22, ey - 47 - tilt * 0.4]]), { color: shade(c.hair || INK, -0.35), lw: 3.5, seed: seed + 26 + d }); // high and short: close to the lash line it reads as glasses
     }
     marks(ctx, 0, hy, hrx, p.fx, p.t || 0, seed + 60);
     ctx.restore();
@@ -399,12 +438,16 @@
       const exl = x0 + d * Math.sin(a) * B.ua, eyl = y0 + Math.cos(a) * B.ua;
       const a2 = a + el, wx = exl + d * Math.sin(a2) * B.fa, wy = eyl + Math.cos(a2) * B.fa;
       const pts = body === 'cartoon' ? [[x0, y0], [exl, eyl], [wx, wy]] : [[x0, y0], [(x0 + exl) / 2, (y0 + eyl) / 2], [exl, eyl], [(exl + wx) / 2, (eyl + wy) / 2], [wx, wy]];
-      if (body === 'cartoon') G.limb(ctx, pts, { color: INK, lw: B.limb * 0.55, outline: 0, seed: seed + 70 + d });
-      else {
+      if (body === 'cartoon') { // a noodle with volume: the upper arm bows out, the forearm back (an S), plus a light edge on the lit side
+        const bow = (A, Z, k) => { const L = Math.hypot(Z[0] - A[0], Z[1] - A[1]) || 1; return [(A[0] + Z[0]) / 2 - (Z[1] - A[1]) / L * k * L, (A[1] + Z[1]) / 2 + (Z[0] - A[0]) / L * k * L]; };
+        const S = pts[0], E = pts[1], Wr = pts[2], arm = curve([S, bow(S, E, -d * 0.1), E, bow(E, Wr, d * 0.08), Wr], 5);
+        G.limb(ctx, arm, { color: INK, lw: B.limb * 0.7, outline: 0, seed: seed + 70 + d });
+        G.line(ctx, arm.slice(3, Math.floor(arm.length * 0.5)).map(([x, y]) => [x - 3, y - 3]), { color: 'rgba(255,255,255,0.22)', lw: 4, seed: seed + 71 + d, amp: 0 });
+      } else {
         G.limb(ctx, pts.slice(2), { color: c.skin, lw: B.limb * 0.85, seed: seed + 72 + d }); // forearm
         G.limb(ctx, pts.slice(0, 3), { color: c.sleeveless ? c.skin : c.top || c.skin, lw: B.limb * (c.sleeveless ? 0.85 : 1.1), seed: seed + 74 + d }); // sleeve (bare arm when sleeveless)
       }
-      if (c.band && d === 1) { // a wristband on the screen-right forearm, clear of the hand/glove so it reads small
+      if (c.band && d === 1) { // a wristband on the screen-right forearm, clear of the hand so it reads small
         const at = (u) => [exl + (wx - exl) * u, eyl + (wy - eyl) * u];
         G.limb(ctx, [at(0.58), at(0.82)], { color: c.band, lw: B.limb * (body === 'cartoon' ? 1.3 : 1.15), seed: seed + 90 });
       }
