@@ -1,7 +1,7 @@
 # Genre menu
 
 The channel is not only horror. Pick one genre per episode **before** writing STORY.md, and write the pick at
-the top of STORY.md (`**แนว:** ตำนานเมือง · ตัวละคร anime · ฟอนต์ Chakra Petch · ซับ glitch …`). Each row is a
+the top of STORY.md (`**แนว:** ตำนานเมือง · ตัวละคร anime · ฟอนต์ Chakra Petch · ซับ glitch · dials V5 M5 D3 …`). Each row is a
 *starting* recipe: change anything, but change it on purpose. Two episodes in a row should not share
 body + font + sub style + music.
 
@@ -59,6 +59,42 @@ body + font + sub style + music.
 | **สรุปหนังสือ / ข้อคิดเชิงอุปมา** | a question hook ("ทำไมเรา…?"), ONE metaphor told in 2–3 "fields" (badge 1, 2…), a split-screen comparison with numbers (stopwatch, chart), the moral as the last line; 30–75 s; `X.bookBadge` in a corner the whole time | `explainer` (glasses, jacket) + POV hands (`X.povHands`) | `kanit` (or `k2d` titles) | `keyword` (*mark* 1–2 words per line) | `flat` · grain 0.02, vignette 0.12 | soft `epiano` I–V–vi–IV or `Genre.play('lofi')` | `pop` on each keyword box, `ting` on badges, whoosh into scenes, clock `woodTick` for timers | `push`, `zoom` into the detail, `X.split` slide |
 | **ข้อคิด / กำลังใจ** | a small failure → one sentence that helps → a small win | `anime` | `pridi` or `itim` | `type` | `watercolor` | slow `epiano` + `strings` swell | soft `bell`, `ting` | `fade`, `dip` white |
 | **หนังตะลุงตลก / วรรณคดีไทยย่อ** | นายหนัง narrator, clowns (อ้ายเท่ง) talk back to the hero, a moral at the end | `puppet` | `mitr` (clowns), `srisakdi` titles | `pop` | `flat` on `R.screen` | `Thai.ranat` + `Thai.chingCycle` + `Thai.klong`, `Thai.pi` tune | `Thai.ching`, `Thai.gong`, `thwack` | `dip` via amber, `fade` |
+
+## Dials: how the genre should feel (1–10)
+
+Set three dials with the pick and write them on the STORY.md pick line (`… · dials V3 M2 D2`). They are the
+reason behind later choices: when a shot, transition or prop doesn't fit the dials, change it or say why.
+
+- **V — visual variance**: ≤ 3 one look, one palette, the same 2–3 shot sizes and places repeated · 4–6 a few
+  scene families, each with its own look · ≥ 7 a new place or look may come every beat.
+- **M — motion**: cutting pace and acting energy. ≤ 3 long holds, small gestures, `cut`/`fade`/`dip` · 4–6 a
+  gesture per beat, one accent transition per scene · ≥ 7 fast cuts, big gestures and `R.act` gestures, `whip`/`zoom`/`flash`.
+  How many shots may move the camera is not this dial: `shots.mjs` checks it against the `GENRE` key below.
+- **D — information density**: ≤ 3 the subtitle and the one clue, nothing else to read · 4–6 a badge or label
+  beside the line · ≥ 7 keyword boxes, charts, split screens (still one new idea per shot).
+
+| แนว | V | M | D | `GENRE` (shots.mjs) |
+|---|---|---|---|---|
+| สยองเลือกทาง | 3 | 3 | 2 | `horror` |
+| ผีไทยพื้นบ้าน | 3 | 2 | 2 | `horror` |
+| ตำนานเมือง / creepypasta | 5 | 5 | 3 | `horror` |
+| ปริศนาจับผิด | 4 | 4 | 6 | `explainer` |
+| ข่าว / คดี | 4 | 4 | 6 | `drama` |
+| วัด / ตำนานโบราณ | 3 | 3 | 2 | `fantasy` |
+| ตลกชีวิตประจำวัน | 5 | 7 | 3 | `comedy` |
+| ชีวิตวัยเรียน / โรแมนซ์ | 4 | 3 | 2 | `slice` |
+| ผจญภัย / แฟนตาซี | 7 | 7 | 3 | `adventure` |
+| ไซไฟ / ถ้า…จะเป็นยังไง | 7 | 6 | 5 | `fantasy` |
+| กีฬา / แข่งขัน | 5 | 9 | 4 | `adventure` |
+| ทำอาหาร / สูตรบ้านๆ | 3 | 4 | 5 | `explainer` |
+| สอนภาษา / คำศัพท์ | 3 | 5 | 5 | `explainer` |
+| นิทานก่อนนอน / สาระสั้น | 3 | 2 | 3 | `slice` |
+| ไดอารี่ / จดหมาย | 2 | 2 | 3 | `drama` |
+| สรุปหนังสือ / ข้อคิดเชิงอุปมา | 5 | 5 | 7 | `explainer` |
+| ข้อคิด / กำลังใจ | 3 | 3 | 2 | `drama` |
+| หนังตะลุงตลก / วรรณคดีไทยย่อ | 3 | 6 | 3 | `comedy` |
+
+Moving a dial ±2 for one episode is fine (a slow, eerie comedy; a dense horror "case file"). Say it on the pick line.
 
 ## Rules that hold in every genre
 
