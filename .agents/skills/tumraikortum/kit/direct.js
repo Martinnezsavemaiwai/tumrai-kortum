@@ -120,6 +120,15 @@
         const room = len(s) - voLag - dur;
         if (room < 0) (est ? warnings : errors).push(`${n(s)}: the line takes ${dur.toFixed(1)} s${est ? ' (estimated)' : ''} but the shot gives it ${(len(s) - voLag).toFixed(1)} s — it runs over the cut`);
         else if (room < 0.25 && !est) warnings.push(`${n(s)}: only ${room.toFixed(2)} s of air after the line before the cut`);
+        // the subtitle must be readable: ≤ 2 lines of ≤ 16 characters, and slow enough to read while it is up.
+        // Characters = what the eye reads: no vowel/tone marks (\p{M}), spaces, quotes or *keyword* stars.
+        // ponytail: 12 characters/s and 1 s are starting points (Thai: marks not counted), tune them against real episodes
+        const chars = (x) => x.replace(/[\p{M}\s"*…]/gu, '').length, lines = s.th.split('\n');
+        if (lines.length > 2) warnings.push(`${n(s)}: the subtitle has ${lines.length} lines — keep it to 2 (split the line into two shots)`);
+        lines.forEach((l, j) => { if (chars(l) > 16) warnings.push(`${n(s)}: subtitle line ${j + 1} has ${chars(l)} characters (≤ 16 reads at phone size; break it with \\n at a word boundary)`); });
+        const cps = chars(s.th) / Math.max(0.01, len(s));
+        if (len(s) < 1) warnings.push(`${n(s)}: the subtitle is up for ${len(s).toFixed(1)} s — under 1 s nobody reads it`);
+        else if (cps > 12) warnings.push(`${n(s)}: ${cps.toFixed(1)} characters/s to read (> 12) — a longer shot or a shorter line`);
       }
       if (s.move && s.move !== 'static' && len(s) < 1.5) warnings.push(`${n(s)}: a ${s.move} on a ${len(s).toFixed(1)} s shot reads as a wobble — keep it static`);
       const p = shots[k - 1];
