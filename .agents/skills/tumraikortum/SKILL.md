@@ -56,7 +56,7 @@ subagents (Codex) follow the same files as checklists in a separate pass.
 
 ## Hard-won rules
 
-- **Windows**: set `CHROME_PATH` for every render command (`references/windows.md`). Never kill Chrome processes you did not launch.
+- **Windows**: Chrome is found in its usual install folder; set `CHROME_PATH` only for a custom install (`references/windows.md`). Never kill Chrome processes you did not launch.
 - **Thai text**: Canvas `fillText` with `font: '700 84px Kanit'` shapes Thai correctly. In libass/ASS, **letter-spacing must be 0** or stacked tone marks (ที่) vanish.
 - **No `ctx.filter = 'blur()'` on full frames** — minutes per frame. Draw to a 1/8-size canvas and scale up.
 - **A hit never lands on a spoken word**: put the hit 0.1 s after a VO line ends, or move the line.
