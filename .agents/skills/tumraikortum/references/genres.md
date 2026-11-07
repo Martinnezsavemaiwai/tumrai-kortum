@@ -7,8 +7,9 @@ body + font + sub style + music.
 
 - Characters: `kit/rig.js` bodies `chibi` (default) · `explainer` (flat vector, soft shading, glasses) · `puppet` (หนังตะลุง).
   See `chibi-rig.md`.
-- Drawing style: six families. Set `STYLE` in score.js to a key below, or pass `--style` to try one. Engine keys:
-  `flat paper watercolor chalk neon pixel`. `kit/art.js` keys: `ink crayon woodcut manga`.
+- Drawing style: fourteen families. Set `STYLE` in score.js to a key below, or pass `--style` to try one. Engine keys:
+  `flat paper watercolor chalk neon pixel`. `kit/art.js` keys: `ink crayon woodcut manga comic riso papercut pixelart retro diorama clay lowpoly`.
+  The art.js styles need `film(ctx, t); G.grade(ctx); subtitles(…)` in film.js: riso, pixelart, retro and diorama do part of their look in `G.grade`.
   - **flat**: clean vector, the safe pick for any genre. The menu groups three outlined looks under it:
     - `paper` has ink outlines that wobble (re-drawn 12×/s, so held frames stay alive), light hatching and a paper-grain/vignette finish. The engine uses it when `STYLE` is unset.
     - `ink` has heavier outlines. Apply `G.grade` for its muted colours.
@@ -18,8 +19,16 @@ body + font + sub style + music.
   - **neon**: a dark glow for sci-fi, nightlife and the city. Use a dark background.
   - **woodcut**: a carved hatch for legends, temples, news and old tales.
   - **manga**: black-and-white screen tones for mystery, puzzles and drama.
+  - **comic**: bold black outlines, flat colour, halftone dots on the shadow side of each shape. Action, superheroes, loud comedy. Pairs with `Kit` sound stickers.
+  - **riso**: five fluoro inks (pink, orange, yellow, green, blue) on cream paper; dark colours print navy, outlines sit a few px off register, ink is speckled. Zines, music, indie explainers. Colours get remapped, so pick the cast palette by hue.
+  - **papercut**: flat paper shapes with no outlines, each casting a short hard shadow on the layer below. Kids, crafts, fables, bedtime stories. Backgrounds (shapes wider than 900 px) lie flat, so layer props in front for depth.
+  - **retro**: 90s cel look: one hard shadow per shape, thin warm-brown lines, faded warm grade and film grain. Nostalgia, romance, school memories.
+  - **diorama**: painted miniatures: contact shadows, light from the top left, richer colour and tilt-shift blur above 26% and below 74% of the frame. Keep faces inside that band. Towns, slice of life, cooking.
+  - **clay**: stop-motion clay: rounded shading lit from the top left, a darker edge in the same colour (no ink), thumbprints that shift each frame, lines boiling at 6 fps. Kids, comedy, cooking. Thin details (glasses, mouths) stay ink lines.
+  - **lowpoly**: each character or prop is cut into straight-edged facets lit from the top left; skies and grounds stay flat. Games, tech, adventure. Limbs stay round, so frame it mid shot or wider.
+  - **pixelart**: the whole frame (not the subtitles) drops to 1/8 resolution with a dithered palette. Games, retro, "level up" formats. Text drawn before `G.grade` turns to mush: draw HUD labels after it, large.
   - Use the genre recipe as a starting point. Choose `flat` or `paper` when unsure.
-  - Optional effect: `pixel` gives retro game scenes stepped contours. Check subtitle legibility at delivery size because pixelation also affects overlays.
+  - Optional effect: `pixel` gives retro game scenes stepped contours. Check subtitle legibility at delivery size because pixelation also affects overlays. Prefer `pixelart`, which leaves the subtitles sharp.
 - Fonts: `node scripts/setup-fonts.mjs <ep> <key…>`. Sub styles, glitch, VHS: `kit/style.js`.
 - Explainer props (`kit/explainer.js`, global `X`): `bookBadge`, `stopwatch`, `split`, `badge`, `chart`, `crowd`, `povHands`.
 - Music: engine `Genre.play(name)` (`lofi chiptune orchestral edm afrobeats qawwali desi boombap`) or

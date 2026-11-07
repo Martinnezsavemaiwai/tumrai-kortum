@@ -1,11 +1,11 @@
 ---
 name: tumraikortum
-description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking, หนังตะลุง…). Every frame drawn in canvas code (chibi / explainer / shadow-puppet characters, six drawing-style families), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode, or review its drawing styles.
+description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking, หนังตะลุง…). Every frame drawn in canvas code (chibi / explainer / shadow-puppet characters, fourteen drawing-style families), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode, or review its drawing styles.
 ---
 
 # TumraiKortum (ทำไรก็ทำ)
 
-A code-only animation pipeline: every frame drawn on a canvas, every sound synthesized, Thai voice from ElevenLabs. It started with Thai horror "choose your path" shorts and now covers other genres (`references/genres.md`), five character bodies, six drawing-style families (flat with paper · ink · crayon, watercolor, chalk, neon, woodcut, manga) and long 16:9 videos. Starting points to scaffold from: `examples/explainer-demo` (9:16 short, rig + explainer kit), `examples/longform-demo` (16:9, chapters).
+A code-only animation pipeline: every frame drawn on a canvas, every sound synthesized, Thai voice from ElevenLabs. It started with Thai horror "choose your path" shorts and now covers other genres (`references/genres.md`), five character bodies, fourteen drawing-style families (flat with paper · ink · crayon, watercolor, chalk, neon, woodcut, manga, comic, riso, papercut, retro, diorama, pixelart, clay, lowpoly) and long 16:9 videos. Starting points to scaffold from: `examples/explainer-demo` (9:16 short, rig + explainer kit), `examples/longform-demo` (16:9, chapters).
 
 For a style-menu review, follow [Reviewing the style menu](references/genres.md#reviewing-the-style-menu).
 
