@@ -11,7 +11,7 @@ What you can make:
   legends, puzzles, comedy, school life / romance, fantasy, sci-fi, sports, cooking, language lessons,
   bedtime facts, diaries, book-summary explainers… (`.agents/skills/tumraikortum/references/genres.md`)
 - **Characters** — one skeleton (neck, elbows, knees, hands with fingers, 15 poses, acting with anticipation)
-  in three bodies: `chibi`, `explainer`, `brick` (toy brick figure); plus the older paper chibi rig.
+  in five bodies: `chibi`, `explainer`, `brick` (toy brick figure), `heroic`, `round`; plus the older paper chibi rig.
 - **Drawing styles** — paper, flat, chalk, woodcut, crayon, manga, comic, riso, papercut, pixelart, retro, diorama, clay, lowpoly, bricks, early3d.
 - **Sound** — drones, strings, music box, lo-fi / chiptune / orchestral / EDM packs, Thai instruments in the
   Thai 7-tone scale (ระนาด ขิม แคน ปี่ ฉิ่ง กลองทัด ฆ้อง ระฆัง), SFX, mixing to −14 LUFS.

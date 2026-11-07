@@ -5,8 +5,9 @@ the top of STORY.md (`**แนว:** ตำนานเมือง · ตัว
 *starting* recipe: change anything, but change it on purpose. Two episodes in a row should not share
 body + font + sub style + music.
 
-- Characters: `kit/rig.js` bodies `chibi` (default) · `explainer` (flat vector, soft shading, glasses) · `brick` (toy brick figure).
-  See `chibi-rig.md`.
+- Characters: `kit/rig.js` bodies `chibi` (default) · `explainer` (flat vector, soft shading, glasses) · `brick` (toy brick figure) ·
+  `heroic` (~1:7.5 adult: action, sports, drama with grown-ups) · `round` (a ball body:
+  cute mascots, kids, elders). See `chibi-rig.md`.
 - Drawing style: fourteen families. Set `STYLE` in score.js to a key below, or pass `--style` to try one. Engine keys:
   `flat paper chalk`. `kit/art.js` keys: `crayon woodcut manga comic riso papercut pixelart retro diorama clay lowpoly bricks early3d`.
   The art.js styles need `film(ctx, t); G.grade(ctx); subtitles(…)` in film.js: woodcut, manga, riso, retro, diorama, clay, bricks, early3d and pixelart do part of their look in `G.grade` (a no-op for the rest).
