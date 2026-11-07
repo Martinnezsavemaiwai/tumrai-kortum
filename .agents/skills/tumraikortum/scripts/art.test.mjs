@@ -14,8 +14,8 @@ test('every art.js style is registered and draws through its own handler', () =>
   const G = { STYLES: {}, C: { ink: '#000' }, style: {}, setStyle() {}, shape() { calls.push('engine'); }, line() {}, limb() {}, path() {}, hatch() {}, bbox: () => [0, 0, 10, 10], wobble: (p) => p };
   const ctx = { G, U: { hash: () => 0.5, pickStyle: (d) => d } };
   vm.createContext(ctx); vm.runInContext(src, ctx, { filename: ART });
-  const listed = [...src.matchAll(/^\/\/ {3}([a-z]+) +\S/gm)].map((m) => m[1]); // the header list
-  assert.deepEqual(listed, ['ink', 'woodcut', 'crayon', 'manga', 'comic', 'riso', 'papercut', 'pixelart', 'retro', 'diorama', 'clay', 'lowpoly']);
+  const listed = [...src.matchAll(/^\/\/ {3}([a-z0-9]+) +\S/gm)].map((m) => m[1]); // the header list
+  assert.deepEqual(listed, ['ink', 'woodcut', 'crayon', 'manga', 'comic', 'riso', 'papercut', 'pixelart', 'retro', 'diorama', 'clay', 'lowpoly', 'bricks', 'early3d']);
   const fake = new Proxy({}, { get: (o, k) => (k in o ? o[k] : () => ({ addColorStop() {} })), set: (o, k, v) => ((o[k] = v), true) }); // any 2D-context call is a no-op
   for (const name of listed) {
     assert.equal(G.STYLES[name]?.art, name, `${name}: not in G.STYLES`);
