@@ -4,8 +4,8 @@
 //   R.draw(ctx, { x, y, s: 1, body: 'chibi', who: R.CAST.mali, t, ...R.act(t, [[0, 'idle'], [2, 'wave']]) });
 //
 // Bodies: chibi (big head, but a neck, elbows and fingers; the default) · explainer (flat vector, soft shading) ·
-// puppet (หนังตะลุง: profile silhouette on a lit screen, perforated, rods to the hands) · brick (a toy brick figure:
-// cylinder head with a stud, printed face, trapezoid torso, block legs, C-shaped hands; pairs with STYLE 'bricks'). Feet at (x, y); s = 1 is 1000 px tall. Every body takes the same pose fields, so
+// brick (a toy brick figure: cylinder head with a stud, printed face, trapezoid torso, block legs, C-shaped hands;
+// pairs with STYLE 'bricks'). Feet at (x, y); s = 1 is 1000 px tall. Every body takes the same pose fields, so
 // poses, R.act and R.walk work for all of them, and every line goes through G.* so all drawing styles apply.
 //
 // Pose fields (radians unless noted): lSh/rSh shoulder (0 = arm hanging, + = out and up), lEl/rEl elbow
@@ -14,7 +14,7 @@
 // ('open' 'fist' 'point' 'peace' 'thumb' 'relax'), fx ['sweat' 'blush' 'tears' 'anger' 'shock' 'sparkle'],
 // reachL/reachR [x, y]: the wrist goes there (IK, same coordinates as the figure's x, y; overrides that arm's
 // lSh/lEl or rSh/rEl). Move the target over t to animate it: { ...R.act(t, keys), reachR: [knob.x, knob.y] }.
-// ponytail: front-view bodies only (puppet ignores it) and no blend weight; add a `reach` 0…1 mix if a reach must ease in from a pose.
+// ponytail: no blend weight; add a `reach` 0…1 mix if a reach must ease in from a pose.
 (function () {
   const G = globalThis.G, U = globalThis.U, H = U.hash;
   const INK = '#1C1620';
@@ -38,7 +38,7 @@
     return out;
   };
   const mirror = (ctrl) => ctrl.map(([u, v]) => [-u, v]).reverse();
-  // one light from the top left: how strong the far-side shadow is per body (puppets are lit from behind)
+  // one light from the top left: how strong the far-side shadow is per body
   const SHADE = { chibi: 0.14, explainer: 0.28 };
 
   // ---------- proportions (units: the figure is 1000 tall at s = 1) ----------
@@ -47,7 +47,6 @@
     chibi: { eye: 0.12, head: [190, 175], neck: 30, torso: 230, sw: 88, ww: 78, hw: 74, ua: 120, fa: 110, hand: 52, thigh: 120, shin: 120, limb: 36, leg: 42, foot: 44 },
     explainer: { head: [108, 104], neck: 24, torso: 250, sw: 86, ww: 72, hw: 70, ua: 150, fa: 140, hand: 54, thigh: 170, shin: 165, limb: 36, leg: 42, foot: 46 },
     brick: { eye: -0.05, head: [118, 100], neck: 26, torso: 290, sw: 96, ww: 130, hw: 148, ua: 125, fa: 115, hand: 46, thigh: 165, shin: 165, limb: 54, leg: 130, foot: 40 },
-    puppet: { head: [70, 80], neck: 40, torso: 320, sw: 40, ww: 34, hw: 46, ua: 220, fa: 220, hand: 80, thigh: 230, shin: 220, limb: 22, leg: 26, foot: 60 },
   };
 
   // ---------- a sample cast (data only: add your own) ----------
@@ -57,9 +56,6 @@
     nok: { name: 'นก', skin: '#F2D0B4', hair: '#E8A23C', hairStyle: 'twintail', eye: '#2F8A6A', top: '#F28AA8', bottom: '#F6F0E2', bottomStyle: 'skirt', shoes: '#C83C4A' },
     lung: { name: 'ลุงชม', skin: '#D9A882', hair: '#D8D4CC', hairStyle: 'bald', eye: '#4A3A2A', top: '#7A9A5A', bottom: '#4A3E34', bottomStyle: 'pants', shoes: '#3A3030', old: true },
     ton: { name: 'ต้น', skin: '#F2D3B8', hair: '#2A1E1A', hairStyle: 'short', eye: '#3A2A20', top: '#F4F1EA', jacket: '#F2B33C', bottom: '#3A4A6A', bottomStyle: 'pants', shoes: '#F2F2F2', glasses: '#2A2230' },
-    // หนังตะลุง characters: colour = the dyed leather; crown = a tall chada
-    prince: { name: 'พระเอก', skin: '#3A6A4A', top: '#C8963C', bottom: '#A8402E', crown: true, nose: 'straight' },
-    teng: { name: 'อ้ายเท่ง', skin: '#2A1E1A', top: '#8A5A3A', bottom: '#5A3A2A', belly: true, nose: 'hook', hairStyle: 'tuft' },
   };
 
   // ---------- character spec: every field a `who` object may have (story.mjs validates bible looks with R.check) ----------
@@ -69,7 +65,6 @@
     hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft', 'buzz'],
     bottomStyle: ['skirt', 'pants', 'shorts', 'sarong'],
     shoeStyle: ['sneaker', 'leather', 'flipflop'],
-    nose: ['straight', 'hook'],
     flags: ['old', 'crown', 'belly', 'mustache', 'sleeveless', 'check'],
     text: ['name', 'mark'],
   };
@@ -79,15 +74,14 @@
       if (SPEC.colors.includes(k)) { if (!/^#[0-9a-fA-F]{6}$/.test(String(v))) out.push(`${k}: "${v}" is not a #rrggbb colour`); }
       else if (Array.isArray(SPEC[k])) { if (!SPEC[k].includes(v)) out.push(`${k}: "${v}" is not one of ${SPEC[k].join(' ')}`); }
       else if (SPEC.flags.includes(k)) { if (typeof v !== 'boolean') out.push(`${k}: must be true/false`); }
-      else if (!SPEC.text.includes(k)) out.push(`${k}: unknown field (have ${[...SPEC.colors, 'body', 'hairStyle', 'bottomStyle', 'shoeStyle', 'nose', ...SPEC.flags, 'name'].join(' ')})`);
+      else if (!SPEC.text.includes(k)) out.push(`${k}: unknown field (have ${[...SPEC.colors, 'body', 'hairStyle', 'bottomStyle', 'shoeStyle', ...SPEC.flags, 'name'].join(' ')})`);
     }
-    if (who && who.body !== 'puppet' && !who.skin) out.push('skin: missing');
+    if (who && !who.skin) out.push('skin: missing');
     return out;
   }
 
   // ---------- hands: fingers point along the forearm; side −1 = screen-left hand ----------
   function hand(ctx, x, y, ang, side, kind, size, skin, body, seed) {
-    const puppet = body === 'puppet';
     ctx.save(); ctx.translate(x, y); ctx.rotate(-ang * side); ctx.scale(side, 1); // local: fingers grow toward +y, thumb toward −x
     const s = size, fl = { lw: 3 };
     const finger = (fx, fy, a, len, w, curl = 0) => {
@@ -103,8 +97,8 @@
     for (let i = 0; i < nF; i++) {
       const k = nF - 1 - i; // index finger nearest the thumb
       if (!ext[k]) continue;
-      const curl = kind === 'relax' ? 0.5 : puppet ? -0.9 : 0;
-      finger(fx(i), base * 0.7, spread(i) * (kind === 'open' || puppet ? 1.6 : kind === 'peace' ? 1.4 : 0.6), s * (puppet ? 0.95 : 0.6), fw, curl);
+      const curl = kind === 'relax' ? 0.5 : 0;
+      finger(fx(i), base * 0.7, spread(i) * (kind === 'open' ? 1.6 : kind === 'peace' ? 1.4 : 0.6), s * 0.6, fw, curl);
     }
     ell(ctx, 0, s * 0.1, s * 0.36, s * 0.38, skin, seed + 1, fl);
     if (ext.some((e) => !e)) for (let i = 0; i < nF; i++) { const k = nF - 1 - i; if (!ext[k]) ell(ctx, fx(i), s * 0.42, fw * 0.62, fw * 0.55, skin, seed + 10 + i, fl); } // folded knuckles
@@ -250,7 +244,7 @@
   const DEF = { lSh: 0.12, rSh: 0.12, lEl: 0.1, rEl: 0.1, lHip: 0.04, rHip: 0.04, lKnee: 0, rKnee: 0, lean: 0, tilt: 0, look: 0, lookY: 0, bob: 0, sx: 1, sy: 1, talk: 0 };
   function front(ctx, o, c, B, body, seed) {
     const p = { ...DEF, ...o };
-    if (c.belly) B = { ...B, sw: B.sw * 1.1, ww: B.ww * 1.75, hw: B.hw * 1.35 }; // a round middle (puppets have their own)
+    if (c.belly) B = { ...B, sw: B.sw * 1.1, ww: B.ww * 1.75, hw: B.hw * 1.35 }; // a round middle
     const legLen = B.thigh + B.shin, hipY = -legLen - B.foot * 0.3, sy = hipY - B.torso, neckTop = sy - B.neck;
     const [hrx, hry] = B.head, hy = neckTop - hry * 0.92;
     const bob = p.bob;
@@ -324,11 +318,11 @@
       ctx.save(); ctx.beginPath(); G.path(ctx, face, true); ctx.clip();
       ctx.fillStyle = 'rgba(110,50,70,0.1)'; ctx.beginPath(); ctx.ellipse(0, hy - hry * 0.34, hrx * 1.1, hry * 0.36, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
-    // eyes, brows, nose, mouth
+    // eyes, brows, mouth
     const ey = hy + hry * (B.eye ?? 0.2), ex = hrx * (body === 'chibi' ? 0.42 : 0.38);
     for (const d of [-1, 1]) {
       dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * (body === 'explainer' ? 0.12 : 0.17));
-      if (c.glasses && body !== 'puppet') { const gr = hrx * 0.24; ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
+      if (c.glasses) { const gr = hrx * 0.24; ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
     }
     { mouth(ctx, 0, ey + hry * 0.42, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.2 : 0.12), p, seed + 34, c); /* a smirk/grin must read at phone size */ ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, 24, 12, 0, 0, Math.PI * 2); ctx.fill(); } }
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.2, ey + 10], [d * ex * 1.5, ey + 2]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
@@ -454,68 +448,6 @@
     ctx.restore();
   }
 
-  // ---------- หนังตะลุง: a perforated leather silhouette in profile, rods to the hands ----------
-  function puppet(ctx, o, c, B, seed) {
-    const p = { ...DEF, ...o }, dir = o.facing || 1;
-    const leather = (k) => shade(k, -0.55);
-    const screen = '#F6D99A';
-    const holes = (pts, n, r, s0) => { ctx.save(); ctx.beginPath(); G.path(ctx, pts, true); ctx.clip(); const [x0, y0, x1, y1] = G.bbox(pts); for (let i = 0; i < n; i++) dot(ctx, x0 + H(s0, i) * (x1 - x0), y0 + H(s0, i, 1) * (y1 - y0), r * (0.6 + H(s0, i, 2) * 0.8), screen); ctx.restore(); };
-    const legLen = B.thigh + B.shin, hipY = -legLen - B.foot * 0.3 + p.bob, sy = hipY - B.torso, neckTop = sy - B.neck;
-    ctx.save(); ctx.scale(dir, 1);
-    // far arm (behind), with its rod
-    const arm = (a, el, kind, back) => {
-      const x0 = B.sw * 0.4, y0 = sy + 20, ex = x0 + Math.sin(a) * B.ua, ey = y0 + Math.cos(a) * B.ua, a2 = a + el, wx = ex + Math.sin(a2) * B.fa, wy = ey + Math.cos(a2) * B.fa;
-      ctx.save(); if (back) ctx.globalAlpha *= 0.8;
-      G.line(ctx, [[wx, wy], [wx + 40, 400]], { color: '#3A2A1A', lw: 5, seed: seed + (back ? 1 : 2), amp: 0.3 }); // the rod
-      G.limb(ctx, [[x0, y0], [ex, ey]], { color: leather(c.top), lw: B.limb, seed: seed + 3 });
-      G.limb(ctx, [[ex, ey], [wx, wy]], { color: leather(c.skin), lw: B.limb * 0.8, seed: seed + 4 });
-      dot(ctx, ex, ey, 5, screen); // the pin at the elbow
-      hand(ctx, wx, wy, a2, 1, kind || 'open', B.hand, leather(c.skin), 'puppet', seed + 5);
-      ctx.restore();
-    };
-    arm(p.lSh, p.lEl, p.handL, true);
-    // legs in a stride: front leg forward, back leg behind
-    for (const [k, hip] of [[0, -0.25 + p.lHip], [1, 0.3 - p.rHip]]) {
-      const x0 = 0, kx = x0 + Math.sin(hip) * B.thigh, ky = hipY + Math.cos(hip) * B.thigh, ax = kx + Math.sin(hip * 0.4) * B.shin, ay = ky + Math.cos(hip * 0.4) * B.shin;
-      G.limb(ctx, [[x0, hipY], [kx, ky], [ax, ay]], { color: leather(c.skin), lw: B.leg, seed: seed + 10 + k });
-      poly(ctx, [[ax - 10, ay - 16], [ax + B.foot, ay + 6], [ax + B.foot * 1.25, ay - 8], [ax + B.foot, ay + 16], [ax - 12, ay + 16]], leather(c.skin), seed + 12 + k);
-    }
-    // body: chest, a belly for the clowns, a hip cloth with hanging flaps
-    const torso = c.belly
-      ? [[-B.sw, sy], [B.sw * 1.2, sy + 10], [B.sw * 2.6, sy + B.torso * 0.55], [B.sw * 1.6, hipY], [-B.hw, hipY], [-B.sw * 1.2, sy + B.torso * 0.5]]
-      : [[-B.sw, sy], [B.sw * 1.1, sy + 6], [B.ww, sy + B.torso * 0.6], [B.hw, hipY], [-B.hw, hipY], [-B.ww, sy + B.torso * 0.6]];
-    poly(ctx, torso, leather(c.top), seed + 20);
-    holes(G.polyPts(torso, 14), 26, 4, seed + 21);
-    const cloth = [[-B.hw * 1.2, hipY - 30], [B.hw * 1.2, hipY - 30], [B.hw * 1.6, hipY + 140], [B.hw * 0.4, hipY + 110], [0, hipY + 170], [-B.hw * 0.6, hipY + 110], [-B.hw * 1.5, hipY + 150]];
-    poly(ctx, cloth, leather(c.bottom), seed + 22); holes(G.polyPts(cloth, 14), 18, 4, seed + 23);
-    // head in profile: back of skull, brow, nose, lips, chin
-    ctx.save(); ctx.translate(0, neckTop); ctx.rotate(p.tilt); ctx.translate(0, -neckTop);
-    G.limb(ctx, [[0, sy + 10], [6, neckTop]], { color: leather(c.skin), lw: B.limb * 1.1, seed: seed + 30 });
-    const hx = 6, hy = neckTop - B.head[1] * 0.85, r = B.head[0];
-    const nose = c.nose === 'hook' ? [[r * 1.05, hy - 6], [r * 1.65, hy + 22], [r * 1.05, hy + 26]] : [[r * 0.95, hy - 10], [r * 1.3, hy + 20], [r * 0.95, hy + 24]];
-    const talk = (p.talk || 0) * 14;
-    const head = [[hx - r, hy], [hx - r * 0.8, hy - r * 0.8], [hx, hy - r], [hx + r * 0.75, hy - r * 0.7], ...nose.map(([x, y]) => [hx + x, y]), [hx + r * 0.95, hy + 40], [hx + r * 0.85, hy + 48 + talk], [hx + r * 0.7, hy + 70 + talk], [hx, hy + r * 0.95], [hx - r * 0.7, hy + r * 0.7]];
-    poly(ctx, head, leather(c.skin), seed + 31);
-    // almond eye cut out of the leather + a brow cut
-    ctx.save(); ctx.fillStyle = screen; ctx.beginPath(); ctx.ellipse(hx + r * 0.45, hy - 4, 14, p.eyes === 'closed' || p.eyes === 'happy' ? 2 : 6, -0.15, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    G.line(ctx, [[hx + r * 0.2, hy - 22], [hx + r * 0.7, hy - 26]], { color: screen, lw: 3, seed: seed + 32 });
-    if (c.crown) { // a tall chada, tiered, perforated
-      const cr = [[hx - r * 0.85, hy - r * 0.55], [hx + r * 0.75, hy - r * 0.6], [hx + r * 0.4, hy - r * 1.3], [hx + r * 0.25, hy - r * 2.2], [hx, hy - r * 3.6], [hx - r * 0.25, hy - r * 2.2], [hx - r * 0.45, hy - r * 1.3]];
-      poly(ctx, cr, leather(c.top), seed + 33); holes(G.polyPts(cr, 10), 16, 3.5, seed + 34);
-      for (let k = 1; k < 4; k++) G.line(ctx, [[hx - r * (0.7 - k * 0.12), hy - r * (0.6 + k * 0.6)], [hx + r * (0.6 - k * 0.12), hy - r * (0.6 + k * 0.6)]], { color: screen, lw: 3, seed: seed + 35 + k });
-    } else if (c.hairStyle === 'tuft') poly(ctx, [[hx - r * 0.5, hy - r * 0.85], [hx - r * 0.2, hy - r * 1.5], [hx + r * 0.1, hy - r * 0.9]], leather(c.skin), seed + 36);
-    ctx.restore();
-    arm(p.rSh, p.rEl, p.handR, false);
-    ctx.restore();
-  }
-
-  // the lit cloth screen behind หนังตะลุง: warm centre, dark edges
-  function screen(ctx, W, H) {
-    const g = ctx.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.7);
-    g.addColorStop(0, '#FBE7B5'); g.addColorStop(0.6, '#E9B866'); g.addColorStop(1, '#5A3A1A');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  }
-
   function draw(ctx, o) {
     const c = typeof o.who === 'string' ? CAST[o.who] : o.who || CAST.mali;
     if (!c) throw new Error(`unknown character ${o.who}; have ${Object.keys(CAST).join(', ')}`);
@@ -524,16 +456,16 @@
     const seed = (o.seed || 1) * 1000;
     if ((o.reachL || o.reachR) && ctx.getTransform) o = { ...o, world: ctx.getTransform() }; // where reach targets live
     ctx.save(); ctx.translate(o.x, o.y);
-    if (o.shadow !== false && body !== 'puppet') { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 0, 150 * (o.s || 1), 22 * (o.s || 1), 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    if (o.shadow !== false) { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 0, 150 * (o.s || 1), 22 * (o.s || 1), 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
     ctx.scale((o.s || 1) * (o.sx || 1), (o.s || 1) * (o.sy || 1));
     // QA (scripts/qa.mjs sets R.faces = [] before a frame): where this face lands on the canvas, camera included
-    if (Array.isArray(globalThis.R.faces) && body !== 'puppet') {
+    if (Array.isArray(globalThis.R.faces)) {
       const hry = B.head[1], hy = -(B.thigh + B.shin) - B.foot * 0.3 - B.torso - B.neck - hry * 0.92, m = ctx.getTransform();
       const P = (y) => { const q = m.transformPoint({ x: 0, y }); return [q.x, q.y]; };
       globalThis.R.faces.push({ who: typeof o.who === 'string' ? o.who : null, name: c.name || null, look: { ...c, body }, alpha: ctx.globalAlpha,
         eye: P(hy + hry * (B.eye ?? 0.2)), chin: P(hy + hry), top: P(hy - hry * 1.12) });
     }
-    if (body === 'puppet') puppet(ctx, o, c, B, seed); else if (body === 'brick') brick(ctx, o, c, B, seed); else front(ctx, o, c, B, body, seed);
+    if (body === 'brick') brick(ctx, o, c, B, seed); else front(ctx, o, c, B, body, seed);
     ctx.restore();
   }
 
@@ -647,5 +579,5 @@
     return { lHip: 0.04 + Math.max(0, s) * 0.25, rHip: 0.04 + Math.max(0, -s) * 0.25, lKnee: Math.max(0, s) * 0.6, rKnee: Math.max(0, -s) * 0.6, lSh: 0.12 - s * 0.25, rSh: 0.12 + s * 0.25, bob: -Math.abs(Math.cos(ph)) * 12 };
   };
 
-  globalThis.R = { draw, act, idle, walk, screen, hand, check, ik, SPEC, POSES, GESTURES, CAST, BODY, BODIES: Object.keys(BODY) };
+  globalThis.R = { draw, act, idle, walk, hand, check, ik, SPEC, POSES, GESTURES, CAST, BODY, BODIES: Object.keys(BODY) };
 })();

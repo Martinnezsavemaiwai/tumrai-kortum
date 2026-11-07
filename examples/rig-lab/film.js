@@ -79,9 +79,8 @@
     const title = S.PAGES[page][1];
     paper(ctx, `rig lab · ${title}`);
     if (page === 0) {
-      [['chibi', 'nok'], ['explainer', 'ton'], ['brick', 'krit'], ['puppet', 'prince']].forEach(([body, who], i) => {
-        const x = 320 + i * 440;
-        if (body === 'puppet') { ctx.save(); ctx.beginPath(); ctx.rect(x - 180, 90, 360, 940); ctx.clip(); R.screen(ctx, W, H); ctx.restore(); }
+      [['chibi', 'nok'], ['explainer', 'ton'], ['brick', 'krit']].forEach(([body, who], i) => {
+        const x = 420 + i * 540;
         fig(ctx, { x, y: 960, s: 0.82, body, who, ...R.POSES.idle });
         tag(ctx, `${body} · ${who}`, x, 1010);
       });
@@ -101,7 +100,7 @@
         if (r === 0) tag(ctx, p, cx, 112);
       }));
     } else if (page === 6) { // the whole sample cast in one body, for silhouette/colour contrast
-      const who = Object.keys(R.CAST).filter((k) => !['prince', 'teng'].includes(k));
+      const who = Object.keys(R.CAST);
       who.forEach((k, i) => { const x = 260 + i * 350; fig(ctx, { x, y: 960, s: 0.78, body: 'chibi', who: k, ...R.POSES.idle }); tag(ctx, k, x, 1010); });
     } else if (page === 8) { // every hair style on one face and colour
       R.SPEC.hairStyle.filter((h) => h !== 'tuft').forEach((h, i) => {
