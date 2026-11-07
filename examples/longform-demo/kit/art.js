@@ -1,5 +1,4 @@
-// ART KIT — more drawing styles on top of the engine's (paper flat pixel chalk neon watercolor):
-//   ink       พู่กันหมึก: tapered brush outlines, one flat sepia wash, no hatching — folk tales, legends
+// ART KIT — more drawing styles on top of the engine's (paper flat chalk):
 //   woodcut   ภาพพิมพ์แกะไม้: 3 tones of ink on paper, carved line shading, thick black edges, reds kept — dark legends
 //   crayon    สีเทียนเด็ก: scribbled wax fills that boil, waxy broken outlines — kid's drawing, diary, comedy
 //   manga     มังงะ: crisp black lines, white paper, dot screentone by darkness — mystery, puzzles
@@ -35,25 +34,6 @@
   const css = (v, a = v[3]) => `rgba(${Math.round(v[0])},${Math.round(v[1])},${Math.round(v[2])},${a})`;
   const mix = (v, w, k) => [0, 1, 2].map((i) => v[i] + (w[i] - v[i]) * k).concat(v[3]);
   const isRed = (v) => v[0] > 140 && v[0] > v[1] * 1.8 && v[0] > v[2] * 1.8; // keep the red box / blood red in woodcut
-
-  // a closed or open point list → brush outline polygon (tapered at the ends when open)
-  function brush(ctx, p, closed, lw, seed, color) {
-    const n = p.length;
-    if (n < 2) return;
-    const L = [], R = [];
-    for (let i = 0; i < n; i++) {
-      const a = p[closed ? (i - 1 + n) % n : Math.max(0, i - 1)], b = p[closed ? (i + 1) % n : Math.min(n - 1, i + 1)];
-      let nx = -(b[1] - a[1]), ny = b[0] - a[0];
-      const d = Math.hypot(nx, ny) || 1; nx /= d; ny /= d;
-      const u = n > 1 ? i / (n - 1) : 0.5, taper = closed ? 1 : Math.pow(Math.sin(Math.PI * Math.min(0.98, Math.max(0.02, u))), 0.6);
-      const w = (lw * 0.5) * taper * (0.55 + 0.9 * H(seed, i, 41));
-      L.push([p[i][0] + nx * w, p[i][1] + ny * w]); R.push([p[i][0] - nx * w, p[i][1] - ny * w]);
-    }
-    ctx.save(); ctx.fillStyle = color;
-    if (closed) { ctx.beginPath(); G.path(ctx, L, true); G.path(ctx, R.reverse(), true); ctx.fill('evenodd'); }
-    else { ctx.beginPath(); G.path(ctx, L.concat(R.reverse()), true); ctx.fill(); }
-    ctx.restore();
-  }
 
   // scribble fill inside the current clip, at an angle per shape
   function scribble(ctx, box, color, seed, gap = 11) {
@@ -139,11 +119,6 @@
 
   // ---------- each style: how a filled shape and an outline are drawn ----------
   const ART = {
-    ink: {
-      fill(ctx, p, v, seed) { ctx.fillStyle = css(mix(v, [217, 199, 160], 0.35), v[3] * 0.92); ctx.beginPath(); G.path(ctx, p, true); ctx.fill(); },
-      stroke(ctx, p, closed, lw, seed, col) { brush(ctx, p, closed, lw * 2.4, seed, col === G.C.ink ? INK : col); },
-      limbColor: (v) => mix(v, [217, 199, 160], 0.35),
-    },
     woodcut: {
       fill(ctx, p, v, seed) {
         const l = lum(v), red = isRed(v);
@@ -298,7 +273,6 @@
   };
 
   Object.assign(G.STYLES, {
-    ink: { amp: 1.1, lw: 1, second: false, hatch: false, textBoil: 0.4, boilFps: 6, art: 'ink', post: { paper: 0.8, grain: 0.05, vignette: 0.4 } },
     woodcut: { amp: 0.7, lw: 1, second: false, hatch: false, textBoil: 0.2, boilFps: 6, art: 'woodcut', post: { paper: 0.6, grain: 0.12, vignette: 0.3 } },
     crayon: { amp: 1.8, lw: 1, second: false, hatch: false, textBoil: 1, boilFps: 8, art: 'crayon', post: { paper: 0.25, grain: 0.08, vignette: 0.12 } },
     manga: { amp: 0.35, lw: 1, second: false, hatch: false, textBoil: 0, boilFps: 4, art: 'manga', post: { paper: 0, grain: 0.02, vignette: 0.1 } },
@@ -355,7 +329,6 @@
   // red boxes keep their colour:  draw(ctx, t) { film(ctx, t); G.grade(ctx); subtitles(ctx, t); … }
   // No-op for every other style. Backgrounds and lights drawn with plain ctx fills only change here.
   const GRADE = {
-    ink: [['saturation', '#808080', 0.55], ['multiply', '#E9D6AE', 0.6]],
     woodcut: [['saturation', '#808080', 1], ['self-overlay'], ['multiply', '#E8DCC0', 1]],
     manga: [['saturation', '#808080', 1], ['self-overlay'], ['self-overlay']],
     riso: [['multiply', '#F4EEDC', 0.35]],
