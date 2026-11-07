@@ -32,7 +32,7 @@
     const B = BODY && BODY[o.body || 'chibi'];
     if (!B) throw new Error('Direct.subject needs kit/rig.js (R.BODY) or explicit landmarks { x, top, eye, … }');
     const s = o.s || 1, hipY = -(B.thigh + B.shin) - B.foot * 0.3, sy = hipY - B.torso, neckTop = sy - B.neck;
-    const hry = B.head[1], hy = neckTop - hry * 0.92, k = (o.body || 'chibi') === 'chibi' ? 0.12 : 0.2;
+    const hry = B.head[1], hy = neckTop - hry * 0.92, k = B.eye ?? 0.2;
     const at = (v) => o.y + v * s;
     return { x: o.x, top: at(hy - hry * 1.12), eye: at(hy + hry * k), chin: at(hy + hry), chest: at(sy + B.torso * 0.3), mid: at(sy + B.torso * 0.5), waist: at(hipY), knee: at(hipY + B.thigh), feet: o.y, headH: hry * 2 * s };
   };
