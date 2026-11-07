@@ -547,7 +547,7 @@ async function main() {
       const srtFile = path.join(OUT, `${nameArg || path.basename(ROOT)}.srt`);
       const subs = args.includes('--subs') && fs.existsSync(srtFile) ? ['-i', srtFile] : [];
       execFileSync(FFMPEG, ['-v', 'error', '-y', '-i', VIDEO, '-i', path.join(OUT, 'music.wav'), ...subs, '-map', '0:v', '-map', '1:a', ...(subs.length ? ['-map', '2:s', '-c:s', 'mov_text'] : []),
-        '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '256k', '-shortest', file], { stdio: 'inherit' });
+        '-c:v', 'libx264', '-preset', 'slow', '-tune', 'animation', '-b:v', '16M', '-maxrate', '20M', '-bufsize', '40M', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '256k', '-shortest', file], { stdio: 'inherit' });
       if (args.includes('--subs') && !subs.length) console.log('(no out/*.srt yet: run node engine/render.js srt first)');
       const info = JSON.parse(execFileSync(FFPROBE, ['-v', 'error', '-show_entries', 'format=duration:stream=codec_type', '-of', 'json', file]).toString());
       const types = info.streams.map((x) => x.codec_type);
