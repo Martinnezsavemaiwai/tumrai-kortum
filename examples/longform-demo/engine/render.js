@@ -107,7 +107,9 @@ const sectionAt = (t) => (SCORE.S ? (Object.entries(SCORE.S).find(([, [a, b]]) =
 
 function findChrome() {
   if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
-  const mac = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'];
+  const mac = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+    path.join(process.env.LOCALAPPDATA || '', 'Google/Chrome/Application/chrome.exe'), 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'];
   for (const p of mac) if (fs.existsSync(p)) return p;
   for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser']) {
     try { return execFileSync('which', [bin]).toString().trim(); } catch (e) { /* next */ }
