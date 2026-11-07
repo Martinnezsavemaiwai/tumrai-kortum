@@ -36,7 +36,7 @@
   Moves.play = (t, name, o = {}) => {
     const c = Moves.clips[name];
     if (!c) throw new Error(`unknown move ${name}; have ${Moves.names().join(', ')}`);
-    const { base = {}, fade = 0.25, loop = false, hold = false, speed = 1, body = 'anime' } = o;
+    const { base = {}, fade = 0.25, loop = false, hold = false, speed = 1, body = 'chibi' } = o;
     const n = c.frames.length, dur = (n - 1) / c.fps / speed;
     if (t < 0 || (!loop && !hold && t > dur)) return { ...DEF, ...base, dx: 0 };
     let u = t * speed * c.fps;

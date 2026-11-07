@@ -45,9 +45,9 @@
   // shot types: every Direct.TYPES framing of one stage, drawn into small frames of the given format
   function types(ctx, [FW, FH]) {
     const portrait = FH > FW, floor = portrait ? 1500 : 900;
-    // 16:9 two-shots pair two anime bodies: a tall and a short figure share no eye line, so a tight two-shot of them
+    // 16:9 two-shots pair two chibi bodies: a tall and a short figure share no eye line, so a tight two-shot of them
     // can't keep both heads in frame and Direct.frame (rightly) falls back to wider
-    const cast = portrait ? [['anime', 'mali', 330], ['chibi', 'nok', 760]] : [['anime', 'mali', 700], ['anime', 'krit', 1150]];
+    const cast = portrait ? [['chibi', 'mali', 330], ['explainer', 'ton', 760]] : [['chibi', 'mali', 700], ['chibi', 'krit', 1150]];
     const stage = (c) => {
       c.fillStyle = '#DCE8EE'; c.fillRect(-4000, -4000, 9000, 9000);
       c.fillStyle = '#C9B79A'; c.fillRect(-4000, floor, 9000, 4000);
@@ -79,18 +79,18 @@
     const title = S.PAGES[page][1];
     paper(ctx, `rig lab · ${title}`);
     if (page === 0) {
-      [['anime', 'mali'], ['cartoon', 'krit'], ['chibi', 'nok'], ['explainer', 'ton'], ['puppet', 'prince']].forEach(([body, who], i) => {
-        const x = 220 + i * 370;
+      [['chibi', 'nok'], ['explainer', 'ton'], ['puppet', 'prince']].forEach(([body, who], i) => {
+        const x = 420 + i * 540;
         if (body === 'puppet') { ctx.save(); ctx.beginPath(); ctx.rect(x - 180, 90, 360, 940); ctx.clip(); R.screen(ctx, W, H); ctx.restore(); }
         fig(ctx, { x, y: 960, s: 0.82, body, who, ...R.POSES.idle });
         tag(ctx, `${body} · ${who}`, x, 1010);
       });
-    } else if (page === 1) poses(ctx, 'anime', 'mali', 0.42);
+    } else if (page === 1) poses(ctx, 'chibi', 'mali', 0.42);
     else if (page === 2) poses(ctx, 'chibi', 'nok', 0.42);
     else if (page === 3) poses(ctx, 'explainer', 'ton', 0.42);
-    else if (page === 4) poses(ctx, 'cartoon', 'krit', 0.42);
+    else if (page === 4) poses(ctx, 'explainer', 'krit', 0.42);
     else if (page === 5) { // faces: head-and-shoulders crops, three expressions per body
-      const rows = [['anime', 'mali'], ['chibi', 'nok'], ['explainer', 'ton'], ['cartoon', 'krit']];
+      const rows = [['chibi', 'nok'], ['explainer', 'ton']];
       rows.forEach(([body, who], r) => ['idle', 'happy', 'scared', 'angry', 'sad'].forEach((p, i) => {
         const cx = 260 + i * 350, cy = 140 + r * 235;
         ctx.save(); ctx.beginPath(); ctx.roundRect(cx - 160, cy - 40, 320, 225, 16); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.clip();
@@ -102,11 +102,11 @@
       }));
     } else if (page === 6) { // the whole sample cast in one body, for silhouette/colour contrast
       const who = Object.keys(R.CAST).filter((k) => !['prince', 'teng'].includes(k));
-      who.forEach((k, i) => { const x = 260 + i * 350; fig(ctx, { x, y: 960, s: 0.78, body: 'anime', who: k, ...R.POSES.idle }); tag(ctx, k, x, 1010); });
+      who.forEach((k, i) => { const x = 260 + i * 350; fig(ctx, { x, y: 960, s: 0.78, body: 'chibi', who: k, ...R.POSES.idle }); tag(ctx, k, x, 1010); });
     } else if (page === 8) { // every hair style on one face and colour
       R.SPEC.hairStyle.filter((h) => h !== 'tuft').forEach((h, i) => {
         const x = 170 + i * 225;
-        fig(ctx, { x, y: 960, s: 0.6, body: i % 2 ? 'chibi' : 'anime', who: { ...R.CAST.nok, hairStyle: h, hair: '#5A3A2A' }, ...R.POSES.idle });
+        fig(ctx, { x, y: 960, s: 0.6, body: i % 2 ? 'chibi' : 'explainer', who: { ...R.CAST.nok, hairStyle: h, hair: '#5A3A2A' }, ...R.POSES.idle });
         tag(ctx, h, x, 1010);
       });
     } else if (page === 9) { // the series cast, straight from the bible (story.mjs cast demo-dorm9 ep3 --out cast.js)
@@ -117,7 +117,7 @@
         for (let f = 0; f <= 14; f++) {
           const tt = k0 + 0.75 + f / 15; // every 2nd frame at 30 fps, around the key change
           ctx.save(); ctx.globalAlpha = f === 14 ? 1 : 0.16;
-          fig(ctx, { x, y: 1000, s: 0.85, body: 'anime', who: 'mali', t: tt, shadow: f === 14, ...R.act(tt, keys, { seed: 1 }) });
+          fig(ctx, { x, y: 1000, s: 0.85, body: 'chibi', who: 'mali', t: tt, shadow: f === 14, ...R.act(tt, keys, { seed: 1 }) });
           ctx.restore();
         }
         tag(ctx, `→ ${to}`, x, 1050);
@@ -126,15 +126,15 @@
     else if (page === 13 || page === 14) types(ctx, page === 13 ? [1080, 1920] : [1920, 1080]);
     else if (page === 12) { // pose changes that play: compare as a clip (render.js clip 12 16) or a sheet
       const u = t - 12;
-      [['anime', 'mali', [[0, 'idle'], [0.6, 'wave'], [1.6, 'angry'], [2.6, 'happy']], [[2.7, 'jump']]],
+      [['chibi', 'mali', [[0, 'idle'], [0.6, 'wave'], [1.6, 'angry'], [2.6, 'happy']], [[2.7, 'jump']]],
         ['chibi', 'nok', [[0, 'idle'], [0.9, 'scared'], [2.0, 'sad'], [3.0, 'cheer']], [[1.0, 'shiver']]],
-        ['cartoon', 'krit', [[0, 'idle'], [0.8, 'think'], [1.8, 'shrug'], [2.8, 'point']], [[2.0, 'shake']]]].forEach(([body, who, keys, gestures], i) => {
+        ['explainer', 'krit', [[0, 'idle'], [0.8, 'think'], [1.8, 'shrug'], [2.8, 'point']], [[2.0, 'shake']]]].forEach(([body, who, keys, gestures], i) => {
         const x = 360 + i * 600;
         fig(ctx, { x, y: 980, s: 0.75, body, who, t: u, seed: i + 2, ...R.act(u, keys, { seed: i + 2, gestures }) });
         tag(ctx, `${body} u=${u.toFixed(2)}`, x, 1030);
       });
     } else { // idle: what a character does when nobody animates it (blink, breathing)
-      [['anime', 'mali'], ['chibi', 'nok'], ['explainer', 'ton']].forEach(([body, who], i) => {
+      [['chibi', 'mali'], ['chibi', 'nok'], ['explainer', 'ton']].forEach(([body, who], i) => {
         const x = 400 + i * 560;
         fig(ctx, { x, y: 980, s: 0.8, body, who, t, ...R.act(t, [[0, 'idle']], { seed: i + 1 }) });
         tag(ctx, `${body} t=${t.toFixed(2)}`, x, 1030);

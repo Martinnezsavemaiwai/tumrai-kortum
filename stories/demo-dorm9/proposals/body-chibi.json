@@ -1,0 +1,28 @@
+{
+  "id": "body-chibi",
+  "by": "claude",
+  "why": "The rig no longer has the anime body (removed with cartoon); chibi is the new default. Move the three canon characters to chibi so the bible still draws and checks.",
+  "changes": [
+    {
+      "op": "set",
+      "path": "characters/praew/body",
+      "value": "chibi"
+    },
+    {
+      "op": "set",
+      "path": "characters/phum/body",
+      "value": "chibi"
+    },
+    {
+      "op": "set",
+      "path": "characters/jan/body",
+      "value": "chibi"
+    },
+    {
+      "op": "set",
+      "path": "genre",
+      "value": "ตลก/ชีวิตประจำวัน · ตัวละคร chibi · ตัวอย่างระบบความจำเรื่อง (ไม่ใช่ตอนที่ลงจริง)"
+    }
+  ],
+  "approved": "2026-11-07"
+}

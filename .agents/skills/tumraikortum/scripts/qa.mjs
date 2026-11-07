@@ -177,7 +177,7 @@ export async function browserChecks(ep, S, { every = 1, bible = null } = {}) {
     const shots = (S.SHOTS || []).filter((s) => s.end > s.t);
     const pairs = shots.length ? shots.map((s) => { const a = Math.min(s.t + 0.7, s.end - 0.15); return [a, Math.min(a + 0.5, s.end - 0.05), s]; })
       : Array.from({ length: Math.floor(S.DURATION / every) }, (_, i) => [i * every + 0.5, i * every + 1, null]).filter(([a]) => a < S.DURATION);
-    const looks = bible && S.EPISODE ? (() => { const st = stateAt(bible, S.EPISODE); return Object.fromEntries(Object.entries(bible.characters).map(([id, c]) => [id, { name: c.name, look: { ...st.look[id], body: c.body || 'anime' } }])); })() : null;
+    const looks = bible && S.EPISODE ? (() => { const st = stateAt(bible, S.EPISODE); return Object.fromEntries(Object.entries(bible.characters).map(([id, c]) => [id, { name: c.name, look: { ...st.look[id], body: c.body || 'chibi' } }])); })() : null;
     const subsAt = (t) => (S.subtitles || []).some((s) => t >= s.t && t < (s.end ?? s.t + 2));
     const dir = path.join(ep, 'out', 'qa'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
     for (const [a, bT, shot] of pairs) {

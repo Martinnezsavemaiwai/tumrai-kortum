@@ -11,7 +11,7 @@ What you can make:
   legends, puzzles, comedy, school life / romance, fantasy, sci-fi, sports, cooking, language lessons,
   bedtime facts, diaries, book-summary explainers, หนังตะลุง comedy… (`.agents/skills/tumraikortum/references/genres.md`)
 - **Characters** — one skeleton (neck, elbows, knees, hands with fingers, 15 poses, acting with anticipation)
-  in five bodies: `anime`, `cartoon`, `chibi`, `explainer`, `puppet` (หนังตะลุง); plus the older paper chibi rig.
+  in three bodies: `chibi`, `explainer`, `puppet` (หนังตะลุง); plus the older paper chibi rig.
 - **Drawing styles** — paper, flat, watercolor, chalk, neon, pixel, ink, woodcut, crayon, manga.
 - **Sound** — drones, strings, music box, lo-fi / chiptune / orchestral / EDM packs, Thai instruments in the
   Thai 7-tone scale (ระนาด ขิม แคน ปี่ ฉิ่ง กลองทัด ฆ้อง ระฆัง), SFX, mixing to −14 LUFS.

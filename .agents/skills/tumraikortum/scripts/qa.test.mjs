@@ -25,20 +25,20 @@ function faulty(edits) {
   for (const [f, subs] of Object.entries(edits)) {
     const p = path.join(f.startsWith('series/') ? dir : ep, f);
     let s = fs.readFileSync(p, 'utf8');
-    for (const [a, b] of subs) { assert.ok(s.includes(a), `fixture: "${a}" not in ${f}`); s = s.replace(a, b); }
+    for (const [a, b] of subs) { assert.ok(typeof a === 'string' ? s.includes(a) : a.test(s), `fixture: "${a}" not in ${f}`); s = s.replace(a, b); } // a RegExp: bible.json is reformatted by `approve`
     fs.writeFileSync(p, s);
   }
   return { ep, S: require(path.join(ep, 'score.js')), done: () => fs.rmSync(dir, { recursive: true, force: true }) };
 }
 
 test('frame checks: faces under the subtitles, under the top bar, off screen; a look the bible does not give', () => {
-  const face = (eyeY, chinY, extra = {}) => ({ who: 'praew', name: 'แพรว', alpha: 1, eye: [500, eyeY], chin: [500, chinY], top: [500, eyeY - 100], look: { hairStyle: 'bob', body: 'anime' }, ...extra });
+  const face = (eyeY, chinY, extra = {}) => ({ who: 'praew', name: 'แพรว', alpha: 1, eye: [500, eyeY], chin: [500, chinY], top: [500, eyeY - 100], look: { hairStyle: 'bob', body: 'chibi' }, ...extra });
   const f = (faces) => ({ t: 1, W: 1080, H: 1920, std: 40, faces });
   assert.match(frameChecks(f([face(1200, 1400)]), { subs: true }).errors.join(), /chin at 0\.73 H is under the subtitle rail/);
   assert.equal(frameChecks(f([face(1200, 1400)]), { subs: false }).errors.length, 0); // no subtitle at that moment: a warning
   assert.match(frameChecks(f([face(150, 300)])).warnings.join(), /under the platform's top bar/);
   assert.deepEqual(frameChecks(f([face(1200, 1400, { eye: [-300, 1200] })]), { subs: true }).errors, []); // off screen: not framed here
-  const looks = { praew: { name: 'แพรว', look: { hairStyle: 'long', body: 'anime' } } };
+  const looks = { praew: { name: 'แพรว', look: { hairStyle: 'long', body: 'chibi' } } };
   assert.match(frameChecks(f([face(600, 700)]), { bibleLooks: looks }).errors.join(), /praew is drawn with hairStyle="bob", the bible says "long"/);
   assert.match(frameChecks(f([face(600, 700, { who: null })]), { bibleLooks: looks }).errors.join(), /hairStyle/); // inline look, matched by name
   assert.match(frameChecks({ ...f([]), std: 1 }).warnings.join(), /flat frame/);
@@ -54,7 +54,7 @@ test('static checks find missing files, randomness, a stale cast.js, bible shots
     'film.js': [["assets/fonts/Kanit-Bold.ttf", 'assets/fonts/Missing.ttf'], ['const FLOOR = 1320', 'const jitter = Math.random(); const FLOOR = 1320']],
     'index.html': [['<script src="film.js">', '<script src="kit/nope.js"></script>\n<script src="film.js">']],
     'cast.js': [['"hairStyle": "bob"', '"hairStyle": "long"']],
-    'series/demo-dorm9/bible.json': [['"id": "e7", "ep": "ep3", "shot": 2', '"id": "e7", "ep": "ep3", "shot": 9']],
+    'series/demo-dorm9/bible.json': [[/"id": "e7",\s*"ep": "ep3",\s*"shot": 2/, '"id": "e7", "ep": "ep3", "shot": 9']],
     'score.js': [["[8, 'ความลับนี่", "[3, 'ความลับนี่"]],
   });
   try {

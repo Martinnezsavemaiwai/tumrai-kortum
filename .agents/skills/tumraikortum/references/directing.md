@@ -32,7 +32,7 @@ tighter than a medium two-shot — block them closer. Two bodies of very differe
 
 ```js
 // film.js (index.html loads kit/direct.js after kit/rig.js)
-const mali = Direct.subject({ x: 400, y: FLOOR, s: 0.8, body: 'anime' }); // the same x, y, s you give R.draw
+const mali = Direct.subject({ x: 400, y: FLOOR, s: 0.8, body: 'chibi' }); // the same x, y, s you give R.draw
 { at: at(5), draw: room, cam: Direct.cam('MCU', mali, { look: 1 }) },
 { at: at(6), draw: room, cam: Direct.cam('CU', mali, { look: 1, move: 'push' }) },
 { at: at(7), draw: room, cam: Shots.combine(Direct.cam('WS', mali), Shots.shake(14, at(7))) },

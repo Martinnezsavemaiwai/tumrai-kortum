@@ -2,7 +2,7 @@
 (function () { Object.assign(globalThis.R.CAST, {
   "praew": {
     "name": "แพรว",
-    "body": "anime",
+    "body": "chibi",
     "skin": "#F6D7C3",
     "hair": "#3A2A3E",
     "hairStyle": "bob",
@@ -16,7 +16,7 @@
   },
   "phum": {
     "name": "ภูมิ",
-    "body": "anime",
+    "body": "chibi",
     "skin": "#E9C2A2",
     "hair": "#1E1A22",
     "hairStyle": "spiky",
@@ -29,7 +29,7 @@
   },
   "jan": {
     "name": "ป้าจันทร์",
-    "body": "anime",
+    "body": "chibi",
     "skin": "#D9A882",
     "hair": "#D8D4CC",
     "hairStyle": "bob",

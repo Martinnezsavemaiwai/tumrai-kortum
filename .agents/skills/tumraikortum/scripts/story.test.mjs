@@ -98,9 +98,9 @@ test('continuity tests fail when a later episode forgets the haircut', () => {
 });
 
 test('character looks are validated by the rig spec', () => {
-  assert.deepEqual(rigCheck(fresh().characters.praew.look, 'anime'), []);
-  assert.match(rigCheck({ skin: '#FFFFFF', hairStyle: 'mohawk' }, 'anime').join(), /hairStyle: "mohawk"/);
-  assert.match(rigCheck({ skin: 'pink' }, 'anime').join(), /not a #rrggbb/);
+  assert.deepEqual(rigCheck(fresh().characters.praew.look, 'chibi'), []);
+  assert.match(rigCheck({ skin: '#FFFFFF', hairStyle: 'mohawk' }, 'chibi').join(), /hairStyle: "mohawk"/);
+  assert.match(rigCheck({ skin: 'pink' }, 'chibi').join(), /not a #rrggbb/);
   const b = fresh(); b.characters.phum.look.hat = '#000000';
   assert.match(errs(b).join('\n'), /characters\/phum: look hat: unknown field/);
 });

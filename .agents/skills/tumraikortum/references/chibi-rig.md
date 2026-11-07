@@ -1,13 +1,11 @@
-# Skeleton rig (`kit/rig.js`) — anime, cartoon, chibi, หนังตะลุง
+# Skeleton rig (`kit/rig.js`) — chibi, explainer, หนังตะลุง
 
 `R.draw(ctx, { x, y, s, body, who, t, ...R.act(t, keys) })` draws one figure, feet at (x, y), 1000 px tall at
 `s: 1`. One skeleton for every body, so poses and acting carry across:
 
 | body | look | notes |
 |---|---|---|
-| `anime` | 1:6.5, pointed chin, big glossy irises with two highlights, bangs + side locks | faces are small in full-body shots: frame waist-up (s 1.8–3) for dialogue. Best with `flat` / `watercolor` |
-| `cartoon` | big round head, tall white eyes, rubber-hose ink limbs, white 4-finger gloves, big shoes | comedy, kids, sports. `flat` / `crayon` |
-| `chibi` | big head, but a neck, elbows and 5-finger hands | cute/comedy/cooking. Any style |
+| `chibi` | big head, but a neck, elbows and 5-finger hands; the default body | most genres: drama, comedy, romance, cooking. Any style |
 | `explainer` | ~1:4.5, round head, small dot eyes, soft one-light shading, optional `glasses` (frame colour) and `jacket` | สรุปหนังสือ / explainer shorts; `flat`. Pairs with `X.povHands` |
 | `puppet` | หนังตะลุง: profile silhouette, perforated leather, pinned joints, rods to the hands, `facing: ±1` | draw `R.screen(ctx, W, H)` behind; `flat` style. Crown (`crown: true`) for heroes, `belly` + hooked `nose` for clowns |
 
@@ -17,4 +15,4 @@
 - Hands: `handL handR` = open fist point peace thumb relax. `fx`: sweat blush tears anger shock sparkle.
 - `R.POSES`: idle happy wave cheer point peace thumbsup shrug think scared startle sad angry sneaky talk. `R.act(t, keys, { seed, gestures, alive, move })` = anticipation dip (builds 0.12 s before a key, springs back during the move) → slow-in + overshoot move (`outBack(smoothstep)`, 0.35 s) with forearms, head and gaze trailing (`LAG`) → hold; wiggles fade in and out; eyes/mouth swap behind a blink. `alive` (default) adds breathing, blinks (~20/min) and gaze shifts from `seed` — **give every character its own seed** or they blink together. `gestures: [[t, 'jump'|'nod'|'shake'|'shiver']]` add on top (`R.GESTURES`). Returns `blink` and `sway` (hair lag) too: spread the whole result into `R.draw`. `R.idle(t, seed)` alone for characters with no keys. `R.walk(t)` adds a step cycle. Tests: `scripts/rig.test.mjs`; graphs/onion skin: `examples/rig-lab` pages 10–12.
 - Real motion for whole-body actions (`kit/moves.js`): `{ ...Moves.play(t - start, 'jump', { base: R.act(t, keys, { seed }), body }) }` instead of keying them by hand — jumping jacks, squats, a side bend, a big wave, a laugh, a scared self-hug, a crouch-and-jump, angry arms, reaching up, a stretch. It eases in from the current pose over `fade` (0.25 s) and back out, keeps the base's face and hands; `loop`/`hold` for repeats; `p.dx·s` added to x moves the figure with the hips. Bodies with short limbs (chibi) keep the timing but the shapes get smaller — check a still. New clips: `scripts/mocap.mjs <name> <CMU id> --from s --to s` (index: cmu-mocap-index-text.txt), then look at a contact sheet: walks/runs and anything toward the camera do not read from the front. Tests: `scripts/mocap.test.mjs`.
-- Check a new character or pose on a model sheet (render stills, tile, look) before using it in shots — e.g. a film whose `draw` for `t < 0` lays out every pose of one body in a grid, rendered with `render.js stills -1`. `examples/longform-demo/` uses `explainer` and `anime` bodies with `R.act` and `R.walk`.
+- Check a new character or pose on a model sheet (render stills, tile, look) before using it in shots — e.g. a film whose `draw` for `t < 0` lays out every pose of one body in a grid, rendered with `render.js stills -1`. `examples/longform-demo/` uses `explainer` and `chibi` bodies with `R.act` and `R.walk`.

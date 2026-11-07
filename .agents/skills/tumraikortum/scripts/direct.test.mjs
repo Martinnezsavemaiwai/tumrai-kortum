@@ -17,7 +17,7 @@ const FORMATS = { '9:16': [1080, 1920], '16:9': [1920, 1080] };
 const near = (a, b, eps = 0.5) => Math.abs(a - b) <= eps;
 
 test('every shot type frames every body with the eyes on the eye line and the face above the subtitle rail', () => {
-  for (const [fmt, [W, H]] of Object.entries(FORMATS)) for (const body of ['anime', 'chibi', 'cartoon', 'explainer']) {
+  for (const [fmt, [W, H]] of Object.entries(FORMATS)) for (const body of ['chibi', 'explainer']) {
     const subj = Direct.subject({ x: 700, y: 1600, s: 0.7, body }, BODY);
     let last = Infinity;
     for (const type of Direct.TYPES) for (const look of [-1, 0, 1]) {

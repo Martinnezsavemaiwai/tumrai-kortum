@@ -1,7 +1,7 @@
 // DIRECT KIT — shot types, framing and camera moves as data, plus a shot-list linter.
 // Browser (global `Direct`, load after kit/rig.js) and node (require: the linter for scripts/shots.mjs and tests).
 //
-// film.js:  const mali = Direct.subject({ x: 400, y: 1500, s: 0.8, body: 'anime' });   // feet at (x, y), like R.draw
+// film.js:  const mali = Direct.subject({ x: 400, y: 1500, s: 0.8, body: 'chibi' });   // feet at (x, y), like R.draw
 //           { at, draw, cam: Direct.cam('CU', mali, { look: 1, move: 'push' }) }         // a Shots.film camera
 // Shot types (by where a 16:9 frame's bottom cuts; a 9:16 frame has the same face size and shows more below):
 //   ECU brows-to-mouth · CU chest · MCU mid-chest · MS waist · MLS knees · FS feet · WS figure ≈ ½ frame height ·
@@ -29,10 +29,10 @@
   // { x, y (feet), s, body } with the rig loaded, or explicit { x, top, eye, chin, chest, mid, waist, knee, feet, headH }
   Direct.subject = (o, BODY = globalThis.R && globalThis.R.BODY) => {
     if (o.eye != null) return o;
-    const B = BODY && BODY[o.body || 'anime'];
+    const B = BODY && BODY[o.body || 'chibi'];
     if (!B) throw new Error('Direct.subject needs kit/rig.js (R.BODY) or explicit landmarks { x, top, eye, … }');
     const s = o.s || 1, hipY = -(B.thigh + B.shin) - B.foot * 0.3, sy = hipY - B.torso, neckTop = sy - B.neck;
-    const hry = B.head[1], hy = neckTop - hry * 0.92, k = { chibi: 0.12, cartoon: -0.12 }[o.body] ?? 0.2;
+    const hry = B.head[1], hy = neckTop - hry * 0.92, k = (o.body || 'chibi') === 'chibi' ? 0.12 : 0.2;
     const at = (v) => o.y + v * s;
     return { x: o.x, top: at(hy - hry * 1.12), eye: at(hy + hry * k), chin: at(hy + hry), chest: at(sy + B.torso * 0.3), mid: at(sy + B.torso * 0.5), waist: at(hipY), knee: at(hipY + B.thigh), feet: o.y, headH: hry * 2 * s };
   };
@@ -45,7 +45,7 @@
     const eye = b ? (a.eye + b.eye) / 2 : a.eye, cx = b ? (a.x + b.x) / 2 : a.x;
     const figH = Math.max(a.feet - a.top, b ? b.feet - b.top : 0), low = (k) => Math.max(a[k], b ? b[k] : -Infinity);
     const feetAnchored = type === 'WS' || type === 'EWS';
-    // anchorY lands on screen y = anchorAt * H. An ECU centres the face (eyes to chin), not the eyes: a cartoon's eyes sit high on a big face
+    // anchorY lands on screen y = anchorAt * H. An ECU centres the face (eyes to chin), not the eyes: a chibi's eyes sit low on a big face
     const ecuY = (a.eye + a.chin) / 2, ecuAt = H > W * 1.2 ? 0.42 : 0.45;
     const anchorY = feetAnchored ? low('feet') : type === 'ECU' ? ecuY : eye, anchorAt = feetAnchored ? L.wideFloor : type === 'ECU' ? ecuAt : L.eye;
     // each type's own zoom. Close types are sized on the frame's SHORT side, so a CU is the same face size in 9:16

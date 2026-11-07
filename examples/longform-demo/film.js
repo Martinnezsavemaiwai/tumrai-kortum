@@ -56,7 +56,7 @@
     },
     walk(ctx, t) {
       park(ctx, t * 260);
-      R.draw(ctx, { x: W * 0.42, y: FLOOR + 110, s: 0.62, body: 'anime', who: 'mali', t, ...R.act(t, [[0, 'happy']]), ...R.walk(t), eyes: 'happy', mouth: 'smile' });
+      R.draw(ctx, { x: W * 0.42, y: FLOOR + 110, s: 0.62, body: 'chibi', who: 'mali', t, ...R.act(t, [[0, 'happy']]), ...R.walk(t), eyes: 'happy', mouth: 'smile' });
       const steps = Math.floor(t * 1.6 * 2) * 1 + 1200;
       ctx.save(); ctx.fillStyle = 'rgba(18,18,36,0.82)'; ctx.beginPath(); ctx.roundRect(W - 470, 120, 380, 110, 20); ctx.fill();
       ctx.fillStyle = '#FFD23F'; ctx.font = '700 64px Kanit'; ctx.fillText(steps.toLocaleString('en-US'), W - 440, 200);
