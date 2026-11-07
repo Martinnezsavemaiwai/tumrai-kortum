@@ -9,14 +9,14 @@ body + font + sub style + music.
   See `chibi-rig.md`.
 - Drawing style: fourteen families. Set `STYLE` in score.js to a key below, or pass `--style` to try one. Engine keys:
   `flat paper chalk`. `kit/art.js` keys: `crayon woodcut manga comic riso papercut pixelart retro diorama clay lowpoly bricks early3d`.
-  The art.js styles need `film(ctx, t); G.grade(ctx); subtitles(…)` in film.js: riso, pixelart, retro and diorama do part of their look in `G.grade`.
+  The art.js styles need `film(ctx, t); G.grade(ctx); subtitles(…)` in film.js: woodcut, manga, riso, retro, diorama, clay, bricks, early3d and pixelart do part of their look in `G.grade` (a no-op for the rest).
   - **flat**: clean vector, the safe pick for any genre. The menu groups two outlined looks under it:
     - `paper` has ink outlines that wobble (re-drawn 12×/s, so held frames stay alive), light hatching and a paper-grain/vignette finish. The engine uses it when `STYLE` is unset.
     - `crayon` has a scribble fill for sketchbook, diary and kids' scenes. The scribble fades at a distance, so use close and medium shots.
   - **chalk**: a dark board for lessons and night scenes. Use a dark background.
   - **woodcut**: a carved hatch for legends, temples, news and old tales.
   - **manga**: black-and-white screen tones for mystery, puzzles and drama.
-  - **comic**: bold black outlines, flat colour, halftone dots on the shadow side of each shape. Action, superheroes, loud comedy. Pairs with `Kit` sound stickers.
+  - **comic**: bold black outlines, flat colour, halftone dots on the shadow side of each shape. Action, superheroes, loud comedy. Pairs with the episode's sound tags (`soundTags`).
   - **riso**: five fluoro inks (pink, orange, yellow, green, blue) on cream paper; dark colours print navy, outlines sit a few px off register, ink is speckled. Zines, music, indie explainers. Colours get remapped, so pick the cast palette by hue.
   - **papercut**: flat paper shapes with no outlines, each casting a short hard shadow on the layer below. Kids, crafts, fables, bedtime stories. Backgrounds (shapes wider than 900 px) lie flat, so layer props in front for depth.
   - **retro**: 90s cel look: one hard shadow per shape, thin warm-brown lines, faded warm grade and film grain. Nostalgia, romance, school memories.
