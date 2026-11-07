@@ -5,7 +5,7 @@ writes `out/qa/` (`report.json`, `sheet.png` = every sampled frame with eye/chin
 
 ```
 CHROME_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" node .agents/skills/tumraikortum/scripts/qa.mjs <episode> [--every 1] [--static]
-node --test ".agents/skills/tumraikortum/scripts/*.test.mjs"     # the whole suite: story, rig motion, framing, skills, QA (≈ 3 s)
+node --test ".agents/skills/tumraikortum/scripts/*.test.mjs"     # the whole suite: story, rig, framing, art styles, lip-sync, mocap, reference, skills, QA (≈ 1 min; QA needs Chrome)
 ```
 
 | area | what fails (✗) / warns (⚠) | how |
