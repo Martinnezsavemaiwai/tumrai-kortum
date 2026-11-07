@@ -39,7 +39,7 @@
   const film = Shots.film(S.SHOTS.map((s) => ({ at: s.t, in: s.in, draw: corridor, cam: Direct.cam(s.shot, subj[s.on], { look: s.look, move: s.move }) })));
   Studio.film({
     async init() { await Studio.loadFont('Kanit', 'assets/fonts/Kanit-Bold.ttf', 700); },
-    draw(ctx, t) { if (t < 0) t = 1; film(ctx, t); Kit.subtitles(ctx, t, S.subtitles, { style: 'box', W, H }); },
+    draw(ctx, t) { if (t < 0) t = 1; film(ctx, t); G.grade(ctx); Kit.subtitles(ctx, t, S.subtitles, { style: 'box', W, H }); },
     fadeOut: 0.5,
   });
 })();

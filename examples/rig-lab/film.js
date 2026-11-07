@@ -87,9 +87,9 @@
     } else if (page === 1) poses(ctx, 'chibi', 'mali', 0.42);
     else if (page === 2) poses(ctx, 'chibi', 'nok', 0.42);
     else if (page === 3) poses(ctx, 'explainer', 'ton', 0.42);
-    else if (page === 4) poses(ctx, 'explainer', 'krit', 0.42);
+    else if (page === 4) poses(ctx, 'brick', 'krit', 0.42);
     else if (page === 5) { // faces: head-and-shoulders crops, three expressions per body
-      const rows = [['chibi', 'nok'], ['explainer', 'ton']];
+      const rows = [['chibi', 'nok'], ['explainer', 'ton'], ['brick', 'krit']];
       rows.forEach(([body, who], r) => ['idle', 'happy', 'scared', 'angry', 'sad'].forEach((p, i) => {
         const cx = 260 + i * 350, cy = 140 + r * 235;
         ctx.save(); ctx.beginPath(); ctx.roundRect(cx - 160, cy - 40, 320, 225, 16); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.clip();
