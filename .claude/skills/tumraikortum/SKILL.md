@@ -1,6 +1,6 @@
 ---
 name: tumraikortum
-description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking…). Every frame drawn in canvas code (chibi / explainer / toy-brick characters, sixteen drawing-style families), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode, or review its drawing styles.
+description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking…). Every frame drawn in canvas code (chibi / explainer / toy-brick characters, fourteen drawing-style families), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode, or review its drawing styles.
 ---
 
 This skill is shared with Codex and other agents. The canonical copy lives in

@@ -1,11 +1,11 @@
 ---
 name: tumraikortum
-description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking…). Every frame drawn in canvas code (chibi / explainer / toy-brick characters, sixteen drawing-style families), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode, or review its drawing styles.
+description: Make code-drawn Thai animations — 9:16 shorts for TikTok/Reels/Shorts and long 16:9 YouTube videos with chapters — in many genres (TumraiKortum horror "what would you do" stories, comedy, school life, fantasy, sci-fi, book-summary explainers, cooking…). Every frame drawn in canvas code (chibi / explainer / toy-brick characters, fourteen drawing-style families), sound synthesized (incl. Thai instruments), Thai voiceover via ElevenLabs, Thai subtitles. Use when asked to make, storyboard, render or fix an animation or episode, or review its drawing styles.
 ---
 
 # TumraiKortum (ทำไรก็ทำ)
 
-A code-only animation pipeline: every frame drawn on a canvas, every sound synthesized, Thai voice from ElevenLabs. It started with Thai horror "choose your path" shorts and now covers other genres (`references/genres.md`), five character bodies, fourteen drawing-style families (flat with paper · ink · crayon, watercolor, chalk, neon, woodcut, manga, comic, riso, papercut, retro, diorama, pixelart, clay, lowpoly, bricks, early3d) and long 16:9 videos. Starting points to scaffold from: `examples/explainer-demo` (9:16 short, rig + explainer kit), `examples/longform-demo` (16:9, chapters).
+A code-only animation pipeline: every frame drawn on a canvas, every sound synthesized, Thai voice from ElevenLabs. It started with Thai horror "choose your path" shorts and now covers other genres (`references/genres.md`), five character bodies, fourteen drawing-style families (flat with paper · crayon, chalk, woodcut, manga, comic, riso, papercut, retro, diorama, pixelart, clay, lowpoly, bricks, early3d) and long 16:9 videos. Starting points to scaffold from: `examples/explainer-demo` (9:16 short, rig + explainer kit), `examples/longform-demo` (16:9, chapters).
 
 For a style-menu review, follow [Reviewing the style menu](references/genres.md#reviewing-the-style-menu).
 
@@ -82,7 +82,7 @@ subagents (Codex) follow the same files as checklists in a separate pass.
 - `kit/moves.js` — motion-capture clips (CMU) as rig poses: `Moves.play(t - start, name, { base: R.act(…), body })` fades in from the pose and back out; jacks, side_bend, squat, wave, laugh, scared, jump, argue, reach_up, stretch. `scripts/mocap.mjs` adds/re-cuts clips (`--list`, `--rebuild`). Front view only.
 - `kit/chapters.js` — `Chapters.timeline/total/draw/card/progress/youtube` for long videos (node + browser).
 - `kit/explainer.js` — props for สรุปหนังสือ/explainer shorts (`X.bookBadge`, `stopwatch`, `split`, `badge`, `chart`, `crowd`, `povHands`).
-- `kit/art.js` — drawing styles ink · woodcut · crayon · manga (+ `G.grade`), in addition to the engine styles listed in the genre menu.
+- `kit/art.js` — drawing styles woodcut · crayon · manga · comic · riso · papercut · pixelart · retro · diorama · clay · lowpoly · bricks · early3d (+ `G.grade`), in addition to the engine styles listed in the genre menu.
 - `kit/style.js` — subtitle styles (outline box pop karaoke shake glitch paper type keyword — `*word*` boxes a keyword), `Kit.font`, `Kit.glitch`, `Kit.vhs`.
 - `kit/thai.js` — Thai instruments, Thai scale, gong/temple bell/wind/whisper; `node kit/thai.js out/thai-demo.wav` = demo + self-check.
 - `references/` — genre menu, long-form, story format, storyboard template, chibi rig, Thai subtitles, sound, Windows notes.
