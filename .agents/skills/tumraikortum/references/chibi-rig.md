@@ -1,4 +1,4 @@
-# Skeleton rig (`kit/rig.js`) — chibi, explainer, หนังตะลุง
+# Skeleton rig (`kit/rig.js`) — chibi, explainer, brick, หนังตะลุง
 
 `R.draw(ctx, { x, y, s, body, who, t, ...R.act(t, keys) })` draws one figure, feet at (x, y), 1000 px tall at
 `s: 1`. One skeleton for every body, so poses and acting carry across:
@@ -7,6 +7,7 @@
 |---|---|---|
 | `chibi` | big head, but a neck, elbows and 5-finger hands; the default body | most genres: drama, comedy, romance, cooking. Any style |
 | `explainer` | ~1:4.5, round head, small dot eyes, soft one-light shading, optional `glasses` (frame colour) and `jacket` | สรุปหนังสือ / explainer shorts; `flat`. Pairs with `X.povHands` |
+| `brick` | toy brick figure: cylinder head with a stud, printed dot-eye face, moulded hair piece, trapezoid torso with the outfit printed on (`jacket`, `vest`, `collar`, `tie`, `bow`, `mark`), block legs, C-shaped hands | toys, kids, "build" formats; pair with STYLE `bricks`. Hands are always the C grip (`handL`/`handR` ignored), knees only shorten the legs, `shorts`/`apron`/`sash`/`belt`/`band` are not drawn |
 | `puppet` | หนังตะลุง: profile silhouette, perforated leather, pinned joints, rods to the hands, `facing: ±1` | draw `R.screen(ctx, W, H)` behind; `flat` style. Crown (`crown: true`) for heroes, `belly` + hooked `nose` for clowns |
 
 - `who`: a `R.CAST` key or an object `{ body, skin, hair, hairStyle: 'long'|'short'|'bob'|'ponytail'|'twintail'|'spiky'|'bald', eye, top, collar, tie, jacket, glasses, accent (hair ties), bottom, bottomStyle: 'pants'|'skirt', shoes, old }` (puppets: `skin top bottom crown belly nose`). `R.check(who)` lists every problem (unknown field, bad colour, unknown style); `R.SPEC` is the full list. `body` in the `who` is used when `R.draw` gets none.

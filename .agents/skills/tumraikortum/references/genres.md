@@ -5,10 +5,10 @@ the top of STORY.md (`**แนว:** ตำนานเมือง · ตัว
 *starting* recipe: change anything, but change it on purpose. Two episodes in a row should not share
 body + font + sub style + music.
 
-- Characters: `kit/rig.js` bodies `chibi` (default) · `explainer` (flat vector, soft shading, glasses) · `puppet` (หนังตะลุง).
+- Characters: `kit/rig.js` bodies `chibi` (default) · `explainer` (flat vector, soft shading, glasses) · `brick` (toy brick figure) · `puppet` (หนังตะลุง).
   See `chibi-rig.md`.
-- Drawing style: fourteen families. Set `STYLE` in score.js to a key below, or pass `--style` to try one. Engine keys:
-  `flat paper watercolor chalk neon pixel`. `kit/art.js` keys: `ink crayon woodcut manga comic riso papercut pixelart retro diorama clay lowpoly`.
+- Drawing style: sixteen families. Set `STYLE` in score.js to a key below, or pass `--style` to try one. Engine keys:
+  `flat paper watercolor chalk neon pixel`. `kit/art.js` keys: `ink crayon woodcut manga comic riso papercut pixelart retro diorama clay lowpoly bricks early3d`.
   The art.js styles need `film(ctx, t); G.grade(ctx); subtitles(…)` in film.js: riso, pixelart, retro and diorama do part of their look in `G.grade`.
   - **flat**: clean vector, the safe pick for any genre. The menu groups three outlined looks under it:
     - `paper` has ink outlines that wobble (re-drawn 12×/s, so held frames stay alive), light hatching and a paper-grain/vignette finish. The engine uses it when `STYLE` is unset.
@@ -26,6 +26,8 @@ body + font + sub style + music.
   - **diorama**: painted miniatures: contact shadows, light from the top left, richer colour and tilt-shift blur above 26% and below 74% of the frame. Keep faces inside that band. Towns, slice of life, cooking.
   - **clay**: stop-motion clay: rounded shading lit from the top left, a darker edge in the same colour (no ink), thumbprints that shift each frame, lines boiling at 6 fps. Kids, comedy, cooking. Thin details (glasses, mouths) stay ink lines.
   - **lowpoly**: each character or prop is cut into straight-edged facets lit from the top left; skies and grounds stay flat. Games, tech, adventure. Limbs stay round, so frame it mid shot or wider.
+  - **bricks**: a toy-brick world: walls and floors (shapes 900 px or wider, drawn with `G.shape`) become brick courses with seams and studs; characters and props turn to glossy moulded plastic. Use the `brick` body for brick figures; other bodies read as plastic toys. Toys, kids, "build" formats. Draw the set with `G.shape` (plain `ctx.fillRect` skips the bricks).
+  - **early3d**: an early-2000s console look: polygon silhouettes, shading from above, a hot highlight, a frame rendered at 40% size with colour banding, plus bloom. Game parodies, "if life were a game". Small text drawn before `G.grade` softens: keep HUD labels large or draw them after.
   - **pixelart**: the whole frame (not the subtitles) drops to 1/8 resolution with a dithered palette. Games, retro, "level up" formats. Text drawn before `G.grade` turns to mush: draw HUD labels after it, large.
   - Use the genre recipe as a starting point. Choose `flat` or `paper` when unsure.
   - Optional effect: `pixel` gives retro game scenes stepped contours. Check subtitle legibility at delivery size because pixelation also affects overlays. Prefer `pixelart`, which leaves the subtitles sharp.
