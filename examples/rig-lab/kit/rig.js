@@ -5,7 +5,8 @@
 //
 // Bodies: chibi (big head, but a neck, elbows and fingers; the default) · explainer (flat vector, soft shading) ·
 // brick (a toy brick figure: cylinder head with a stud, printed face, trapezoid torso, block legs, C-shaped hands;
-// pairs with STYLE 'bricks'). Feet at (x, y); s = 1 is 1000 px tall. Every body takes the same pose fields, so
+// pairs with STYLE 'bricks') · heroic (~1:7.5, broad shoulders, narrow waist, long legs) · round (a ball torso, short limbs).
+// Feet at (x, y); s = 1 is 1000 px tall. Every body takes the same pose fields, so
 // poses, R.act and R.walk work for all of them, and every line goes through G.* so all drawing styles apply.
 //
 // Pose fields (radians unless noted): lSh/rSh shoulder (0 = arm hanging, + = out and up), lEl/rEl elbow
@@ -38,6 +39,12 @@
     return out;
   };
   const mirror = (ctrl) => ctrl.map(([u, v]) => [-u, v]).reverse();
+  // the part of a closed outline below the line y = Y (the trousers on the ball torso)
+  const below = (pts, Y) => {
+    const out = [];
+    pts.forEach((a, i) => { const b = pts[(i + 1) % pts.length]; if (a[1] >= Y) out.push(a); if ((a[1] - Y) * (b[1] - Y) < 0) out.push([a[0] + (b[0] - a[0]) * (Y - a[1]) / (b[1] - a[1]), Y]); });
+    return out;
+  };
   // one light from the top left: how strong the far-side shadow is per body
   const SHADE = { chibi: 0.14, explainer: 0.28 };
 
@@ -47,6 +54,10 @@
     chibi: { eye: 0.12, head: [190, 175], neck: 30, torso: 230, sw: 88, ww: 78, hw: 74, ua: 120, fa: 110, hand: 52, thigh: 120, shin: 120, limb: 36, leg: 42, foot: 44 },
     explainer: { head: [108, 104], neck: 24, torso: 250, sw: 86, ww: 72, hw: 70, ua: 150, fa: 140, hand: 54, thigh: 170, shin: 165, limb: 36, leg: 42, foot: 46 },
     brick: { eye: -0.05, head: [118, 100], neck: 26, torso: 290, sw: 96, ww: 130, hw: 148, ua: 125, fa: 115, hand: 46, thigh: 165, shin: 165, limb: 54, leg: 130, foot: 40 },
+    // eyeR / eyeX: eye radius and spacing in head widths (default 0.17 / 0.38; explainer 0.12, chibi spacing 0.42)
+    heroic: { eyeR: 0.13, eyeX: 0.36, head: [60, 66], neck: 34, torso: 290, sw: 125, ww: 64, hw: 74, ua: 175, fa: 160, hand: 50, thigh: 240, shin: 232, limb: 40, leg: 48, foot: 48 },
+    // round: the torso is a ball (rx = ww) from the shoulders to just below the hips
+    round: { eye: 0.12, eyeX: 0.4, round: true, head: [150, 138], neck: 8, torso: 300, sw: 125, ww: 205, hw: 140, ua: 100, fa: 90, hand: 46, thigh: 80, shin: 78, limb: 40, leg: 50, foot: 50 },
   };
 
   // ---------- a sample cast (data only: add your own) ----------
@@ -64,7 +75,7 @@
     colors: ['skin', 'hair', 'eye', 'top', 'collar', 'bottom', 'shoes', 'tie', 'jacket', 'glasses', 'accent', 'sash', 'band', 'belt', 'socks', 'apron', 'bow', 'vest', 'markColor'],
     hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft', 'buzz', 'twoblock', 'comma', 'sidepart', 'swept', 'bangs', 'braids', 'bun', 'curly'],
     bottomStyle: ['skirt', 'pants', 'shorts', 'sarong'],
-    shoeStyle: ['sneaker', 'leather', 'flipflop'],
+    shoeStyle: ['sneaker', 'leather', 'flipflop', 'loafer', 'boot', 'sandal'],
     flags: ['old', 'crown', 'belly', 'mustache', 'sleeveless', 'check'],
     text: ['name', 'mark'],
   };
@@ -159,35 +170,79 @@
     if (c.hairStyle === 'bangs') { const half = [[1.1, -0.35], [1.26, 0.7], [1.28, 2.3], [0.6, 2.36], [0.15, 2.36]]; sh(ctx, S([...mirror(half), ...half]), c.hair, seed, { lw: 4 }); }
     // bun (มวย): a ball on the crown, half hidden by the front cap
     if (c.hairStyle === 'bun') ell(ctx, hx, hy - ry * 1.14, rx * 0.44, ry * 0.4, c.hair, seed + 6);
+    // two block: the long top only — a crown dome cut level above the ears, so the clipped sides read as short
+    if (c.hairStyle === 'twoblock') { const dome = []; for (let i = 0; i <= 16; i++) { const a = Math.PI * (1 + i / 16); dome.push([hx + Math.cos(a) * rx * 1.1, hy - ry * 0.18 + Math.sin(a) * ry * 0.98]); } sh(ctx, dome, c.hair, seed + 3); return; }
     const curly = c.hairStyle === 'curly';
     ell(ctx, hx, hy - ry * 0.1, rx * (curly ? 1.24 : 1.12), ry * (curly ? 1.14 : 1.08), c.hair, seed + 3);
   }
-  // ---------- shoes: the foot points outward (d), sole on the ground line ay + foot*0.4 ----------
-  //   sneaker = canvas upper, white rubber sole + toe cap, laces · leather = rounded toe, dark heel/sole, shine ·
-  //   flipflop = bare foot on a flat rubber sole with a thong strap (รองเท้าแตะหูหนีบ) · none = the old plain wedge
-  function shoe(ctx, c, ax, ay, d, B, seed) {
-    const col = c.shoes || '#3A3030', L = B.leg * 1.1, F = B.foot * 1.3, toe = ax + d * F * 0.95, back = ax - d * L * 0.62;
-    const upper = [[ax - d * L * 0.6, ay - F * 0.32], [ax + d * L * 0.6, ay - F * 0.32], [toe, ay + F * 0.02], [toe - d * F * 0.05, ay + F * 0.3], [back, ay + F * 0.3]];
-    if (c.shoeStyle === 'flipflop') {
-      poly(ctx, [[back - d * 4, ay + F * 0.28], [toe + d * 8, ay + F * 0.28], [toe + d * 8, ay + F * 0.46], [back - d * 4, ay + F * 0.46]], col, seed + 1, { lw: 3 });
-      poly(ctx, [[ax - d * L * 0.5, ay - F * 0.3], [ax + d * L * 0.5, ay - F * 0.3], [toe - d * 2, ay + F * 0.12], [toe - d * 6, ay + F * 0.3], [back, ay + F * 0.3]], c.skin || '#E9C2A2', seed, { lw: 3 });
-      G.line(ctx, [[ax - d * L * 0.45, ay + F * 0.22], [ax + d * F * 0.5, ay - F * 0.02], [ax + d * L * 0.55, ay + F * 0.24]], { color: col, lw: 6, seed: seed + 2 });
+  // ---------- footwear: a front / three-quarter foot under each ankle, the toe turned a little outward (d) ----------
+  // The leg (and trousers, socks) end inside the shoe: front() pulls each stroke's rounded end up out of the sole
+  // (SHOE.st), the shoe is drawn over it, and the sole stands on the ground line ankle + foot*0.3.
+  //   sneaker (the default) = canvas upper, thick light rubber sole and toe cap, laces · leather = a laced derby,
+  //   dark welted sole and heel block, shine · loafer = a low slip-on, saddle strap, thin sole, the ankle shows ·
+  //   boot = a laced shaft up the shin, lug sole, pull tab · sandal = a bare foot on a thick footbed, two wide strapped
+  //   bands with buckles · flipflop = a bare foot on a thin rubber sole with a thong strap (รองเท้าแตะหูหนีบ)
+  // h: collar height over the ankle, in leg widths · st: sole, in foot lengths · open: a bare foot on a footbed
+  const SHOE = { sneaker: { h: 0.62, st: 0.22 }, leather: { h: 0.5, st: 0.15 }, flipflop: { h: 0.6, st: 0.1, open: true },
+    loafer: { h: 0.44, st: 0.13 }, boot: { h: 0.62, st: 0.24, shaft: 1.9 }, sandal: { h: 0.6, st: 0.24, open: true } };
+  const shoeOf = (c) => SHOE[c.shoeStyle] || SHOE.sneaker;
+  const isLight = (h) => { const n = parseInt(String(h).slice(1), 16); return ((n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) / 255 > 0.6; };
+  const clipTo = (ctx, pts, f) => { ctx.save(); ctx.beginPath(); G.path(ctx, pts, true); ctx.clip(); f(); ctx.restore(); };
+  function shoe(ctx, c, ax, ay, d, B, seed, u = [0, 1]) {
+    const S = shoeOf(c), kind = c.shoeStyle || 'sneaker', col = c.shoes || '#3A3030', F = B.foot, Lw = B.leg;
+    const gy = ay + F * 0.3, cw = Lw * 0.68 + 4, T = F * 0.42, st = F * S.st, H = F * 0.3 + Lw * S.h;
+    const P = (x, v) => [ax + d * x, gy - v], lace = isLight(col) ? shade(col, -0.45) : '#EDE6D8';
+    const lerp2 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    // heel → collar → instep → toe, closed along the ground; lift raises it (a foot standing on a footbed)
+    const outline = (h, toe = T, lift = 0) => spline([P(-cw - 1, lift), P(-cw - 1, lift + h * 0.5), P(-cw * 0.7, lift + h), P(cw * 0.7, lift + h - Lw * 0.06),
+      P(cw + toe * 0.3, lift + F * 0.42), P(cw + toe, lift + F * 0.18), P(cw + toe * 0.8, lift)], 0, 0, 1, 1, 5).map(([x, y]) => [x, Math.min(y, gy - lift)]);
+    const instep = (k) => lerp2(P(cw * 0.7, H - Lw * 0.06), P(cw + T * 0.3, F * 0.42), k);
+    if (S.open) {
+      const bed = outline(st, T * 1.08), foot = outline(H - st * 0.7, T * 0.92, st * 0.7), skin = c.socks || c.skin || '#E9C2A2';
+      sh(ctx, bed, kind === 'sandal' ? '#C9A27A' : col, seed + 1, { lw: 3 });
+      if (kind === 'sandal') G.line(ctx, [P(-cw - 1, st * 0.3), P(cw + T * 0.95, st * 0.3)], { color: '#3A2E26', lw: st * 0.4, seed: seed + 2 }); // the outsole under the cork
+      sh(ctx, foot, skin, seed + 3, { lw: 3 });
+      if (!c.socks) for (let i = 0; i < 5; i++) { const k = i / 4, [x, y] = P(cw * 0.05 + (cw * 0.95 + T * 0.78) * k, st + F * (0.15 - k * 0.05)); ell(ctx, x, y, F * (0.11 - k * 0.04), F * (0.1 - k * 0.035), skin, seed + 10 + i, { lw: 2 }); } // toes, the big one inside
+      if (kind === 'sandal') clipTo(ctx, foot, () => { // two wide bands across the foot, a buckle on the outside of each
+        [[0.22, 0.2], [0.68, 0.18]].forEach(([k, w], j) => {
+          const a = P(-cw - 2, st + F * (0.55 - k * 0.35) + H * 0.1), b = P(cw + T, st + F * (0.5 - k * 0.42)), [bx, by] = lerp2(a, b, 0.78);
+          G.line(ctx, [a, b], { color: col, lw: F * w, seed: seed + 20 + j });
+          poly(ctx, [[bx - F * 0.06, by - F * 0.07], [bx + F * 0.06, by - F * 0.07], [bx + F * 0.06, by + F * 0.07], [bx - F * 0.06, by + F * 0.07]], '#C8C2B0', seed + 24 + j, { lw: 2 });
+        });
+      });
+      else { // the thong: from between the first two toes up over the instep, down to both sides of the sole
+        const knot = P(cw * 0.25, st + H * 0.55);
+        G.line(ctx, [P(-cw * 0.55, st + F * 0.05), knot, P(cw + T * 0.55, st + F * 0.06)], { color: col, lw: F * 0.09, seed: seed + 20 });
+        G.line(ctx, [knot, P(cw * 0.3, st + F * 0.2)], { color: col, lw: F * 0.07, seed: seed + 21 });
+      }
       return;
     }
-    if (c.shoeStyle === 'sneaker') {
-      poly(ctx, upper, col, seed);
-      poly(ctx, [[back - d * 2, ay + F * 0.18], [toe + d * 3, ay + F * 0.18], [toe + d * 3, ay + F * 0.44], [back - d * 2, ay + F * 0.44]], '#F2F0EA', seed + 1, { lw: 3 });
-      ell(ctx, toe - d * F * 0.18, ay + F * 0.12, F * 0.22, F * 0.16, '#F2F0EA', seed + 2, { lw: 3 });
-      for (let k = 0; k < 2; k++) G.line(ctx, [[ax - d * L * 0.25 + d * k * 8, ay - F * 0.2 + k * 9], [ax + d * L * 0.3 + d * k * 8, ay - F * 0.12 + k * 9]], { color: '#F2F0EA', lw: 3, seed: seed + 3 + k });
-      return;
+    if (S.shaft) { // boot: a shaft along the shin's own direction, so it still holds the leg in a stride
+      const n = [-u[1], u[0]], L = Lw * S.shaft, w = cw, at = (k, side) => [ax - u[0] * L * k + n[0] * w * side, ay - u[1] * L * k + n[1] * w * side];
+      const shaft = [[ax + n[0] * w, ay + n[1] * w + F * 0.2], at(1, 1.04), at(1, -1.04), [ax - n[0] * w, ay - n[1] * w + F * 0.2]];
+      poly(ctx, shaft, col, seed + 4); soft(ctx, shaft, col, 0.2);
+      G.line(ctx, Array.from({ length: 7 }, (_, k) => at(0.9 - k * 0.13, k % 2 ? 0.32 : -0.32)), { color: lace, lw: 3, seed: seed + 5 }); // laces, zigzag
+      G.line(ctx, [at(1, -0.7 * d), at(1.18, -0.7 * d)], { color: shade(col, -0.3), lw: 5, seed: seed + 6 }); // the pull tab at the back
     }
-    if (c.shoeStyle === 'leather') {
-      poly(ctx, upper, col, seed);
-      poly(ctx, [[back - d * 2, ay + F * 0.26], [toe + d * 2, ay + F * 0.26], [toe + d * 2, ay + F * 0.42], [back - d * 2, ay + F * 0.42]], shade(col, -0.45), seed + 1, { lw: 3 });
-      ctx.save(); ctx.globalAlpha = 0.55; G.line(ctx, [[toe - d * F * 0.5, ay - F * 0.02], [toe - d * F * 0.18, ay + F * 0.06]], { color: '#FFFFFF', lw: 5, seed: seed + 2 }); ctx.restore();
-      return;
+    const out = outline(H);
+    sh(ctx, out, col, seed); soft(ctx, out, col, 0.22);
+    const sole = { sneaker: '#F2F0EA', boot: '#2A2420' }[kind] || shade(col, -0.5);
+    poly(ctx, below(out, gy - st), sole, seed + 1, { lw: 3 });
+    G.line(ctx, [P(-cw - 1, st), P(cw + T * 0.85, st)], { color: shade(sole, -0.25), lw: 2, seed: seed + 2, amp: 0.3 }); // where the upper meets the sole
+    if (kind === 'sneaker') {
+      clipTo(ctx, out, () => { const [x, y] = P(cw + T * 0.62, st + F * 0.1); ell(ctx, x, y, T * 0.7, F * 0.2, '#F2F0EA', seed + 7, { lw: 2 }); }); // the rubber toe cap
+      for (let k = 0; k < 3; k++) { const [x, y] = instep(0.18 + k * 0.26); G.line(ctx, [[x - Lw * 0.2, y + 2], [x + Lw * 0.2, y - 2]], { color: lace, lw: 3, seed: seed + 8 + k }); }
+    } else if (kind === 'leather' || kind === 'boot') {
+      poly(ctx, [P(-cw - 1, 0), P(-cw * 0.15, 0), P(-cw * 0.15, st * 1.7), P(-cw - 1, st * 1.7)], shade(sole, -0.1), seed + 9, { lw: 2 }); // the heel block
+      if (kind === 'leather') {
+        G.line(ctx, [P(-cw * 0.9, st + 3), P(cw + T * 0.8, st + 3)], { color: shade(col, 0.45), lw: 2, seed: seed + 10, amp: 0.3 }); // the welt stitch
+        for (let k = 0; k < 2; k++) { const [x, y] = instep(0.15 + k * 0.3); G.line(ctx, [[x - Lw * 0.16, y + 2], [x + Lw * 0.16, y - 2]], { color: lace, lw: 3, seed: seed + 11 + k }); }
+      }
+    } else if (kind === 'loafer') {
+      clipTo(ctx, out, () => G.line(ctx, [P(-cw * 0.1, H * 0.62), P(cw + T * 0.32, F * 0.36)], { color: shade(col, -0.28), lw: F * 0.12, seed: seed + 12 })); // the saddle strap
+      const [x, y] = instep(0.45); ell(ctx, x - d * Lw * 0.12, y + F * 0.06, F * 0.07, F * 0.03, shade(col, -0.55), seed + 13, { lw: 0 }); // its slot
     }
-    poly(ctx, [[ax - d * B.leg * 0.6, ay - B.foot * 0.3], [ax + d * B.leg * 0.6, ay - B.foot * 0.3], [ax + d * B.foot * 0.9, ay + B.foot * 0.35], [ax - d * B.leg * 0.6, ay + B.foot * 0.35]], col, seed); // plain wedge (same winding both feet)
+    if (!isLight(col)) { ctx.save(); ctx.globalAlpha = 0.45; G.line(ctx, [P(cw + T * 0.2, F * 0.34), P(cw + T * 0.6, F * 0.3)], { color: '#FFFFFF', lw: 4, seed: seed + 14 }); ctx.restore(); } // shine on the toe
   }
   const mix = (p, q, u) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(p.slice(i, i + 2), 16) * (1 - u) + parseInt(q.slice(i, i + 2), 16) * u).toString(16).padStart(2, '0')).join('');
   function hairFront(ctx, c, hx, hy, rx, ry, seed, body) {
@@ -203,7 +258,7 @@
     const arc = (r = 1.1) => { const out = []; for (let i = 0; i <= 16; i++) { const a = Math.PI * (1.02 + 0.96 * i / 16); out.push([hx + Math.cos(a) * rx * r, hy - ry * 0.05 + Math.sin(a) * ry * 1.08]); } return out; };
     // the default fringe: n locks down to the brows (right to left, to close the crown arc)
     const locks = (n, dip = 0.22, notch = 0.2, drop = 0) => { const out = []; for (let i = n; i >= 0; i--) { const x0 = hx + rx * 1.08 * (2 * i / n - 1); out.push([x0, brow + (i % 2 ? 0 : ry * dip) + drop * ry]); if (i > 0) out.push([x0 - rx * notch, brow - ry * 0.12 + drop * ry]); } return out; };
-    if (st === 'twoblock') for (const d of [-1, 1]) ell(ctx, hx + d * rx * 0.96, hy - ry * 0.12, rx * 0.2, ry * 0.46, mix(c.hair, c.skin || c.hair, 0.55), seed + 2 + d, { lw: 2 }); // clipped sides: scalp shows
+    if (st === 'twoblock') for (const d of [-1, 1]) ell(ctx, hx + d * rx * 0.93, hy - ry * 0.16, rx * 0.12, ry * 0.4, mix(c.hair, c.skin || c.hair, 0.55), seed + 2 + d, { lw: 2 }); // clipped sides: scalp shows
     let cap;
     if (st === 'twoblock') cap = [...arc(1.0).map(([x, y]) => [x, y - ry * 0.08]), P(1.0, -0.42), ...locks(4, 0.08, 0.08, 0.1).map(([x, y]) => [hx + (x - hx) * 0.9, y]), P(-1.0, -0.42)]; // a full, raised top over clipped sides, a thick even fringe
     else if (st === 'comma') cap = [...arc(), B(1.08, 0.3), B(0.86, 0.34), B(0.5, 0.18), B(0.1, -0.5), B(-0.1, -0.5), B(-0.5, 0.18), B(-0.86, 0.34), B(-1.08, 0.3)]; // curtain fringe from a deep centre part
@@ -288,11 +343,14 @@
       const kx = x0 + d * Math.sin(hip) * B.thigh, ky = y0 + Math.cos(hip) * B.thigh;
       const ax = kx + d * Math.sin(hip - knee) * B.shin, ay = ky + Math.cos(hip - knee) * B.shin;
       const pants = c.bottomStyle === 'pants' ? c.bottom : c.skin;
-      G.limb(ctx, [[x0, y0], [kx, ky], [ax, ay]], { color: pants, lw: B.leg, seed: seed + 50 + d });
-      if (c.bottomStyle === 'pants') G.limb(ctx, [[x0, y0], [kx, ky], [ax, ay - B.leg * 0.3]], { color: pants, lw: B.leg * 1.25, outline: 4, seed: seed + 52 + d });
+      // every stroke ends with a round cap of half its width: end it that far (plus the sole) above the ground, along the shin, so the cap stays inside the shoe
+      const sl = Math.hypot(ax - kx, ay - ky) || 1, u = [(ax - kx) / sl, (ay - ky) / sl], up = Math.max(shoeOf(c).st, shoeOf(c).open ? 0.3 : 0.2) * B.foot - B.foot * 0.3; // bare feet: the leg ends at the ankle, inside the foot drawn over it
+      const end = (lw) => [ax - u[0] * (lw / 2 + up), ay - u[1] * (lw / 2 + up)];
+      G.limb(ctx, [[x0, y0], [kx, ky], end(B.leg)], { color: pants, lw: B.leg, seed: seed + 50 + d });
+      if (c.bottomStyle === 'pants') G.limb(ctx, [[x0, y0], [kx, ky], end(B.leg * 1.25)], { color: pants, lw: B.leg * 1.25, outline: 4, seed: seed + 52 + d });
       if (c.bottomStyle === 'shorts') G.limb(ctx, [[x0, y0], [x0 + (kx - x0) * 0.72, y0 + (ky - y0) * 0.72]], { color: c.bottom, lw: B.leg * 1.6, outline: 4, seed: seed + 52 + d }); // above the knee
-      if (c.socks) G.limb(ctx, [[kx + (ax - kx) * 0.55, ky + (ay - ky) * 0.55], [ax, ay]], { color: c.socks, lw: B.leg * 1.08, seed: seed + 53 + d });
-      shoe(ctx, c, ax, ay, d, B, seed + 56 + d);
+      if (c.socks) G.limb(ctx, [[kx + (ax - kx) * 0.55, ky + (ay - ky) * 0.55], end(B.leg * 1.08)], { color: c.socks, lw: B.leg * 1.08, seed: seed + 53 + d });
+      shoe(ctx, c, ax, ay, d, B, seed + 56 + d, u);
     }
 
     // upper body leans and bobs around the hips
@@ -303,10 +361,18 @@
     ctx.restore();
     // torso: shoulders → waist → hips, skirt over the hips
     const waistY = sy + B.torso * 0.62;
-    poly(ctx, [[-B.sw, sy + 8], [-B.sw * 0.6, sy - 6], [B.sw * 0.6, sy - 6], [B.sw, sy + 8], [B.ww, waistY], [B.hw, hipY + 10], [-B.hw, hipY + 10], [-B.ww, waistY]], c.top || '#6A8AB0', seed + 2, { hatch: true });
-    soft(ctx, [[-B.sw, sy + 8], [B.sw, sy + 8], [B.hw, hipY + 10], [-B.hw, hipY + 10]], c.top, SHADE[body]);
+    // round: a ball from the shoulders to below the hips · others: the trapezoid
+    const shell = B.round ? G.ellPts(0, (sy + hipY) / 2 + 10, B.ww, (hipY - sy) / 2 + 25, 48) : null;
+    if (shell) { sh(ctx, shell, c.top || '#6A8AB0', seed + 2, { hatch: true }); soft(ctx, shell, c.top, SHADE[body]); }
+    else {
+      const torso = [[-B.sw, sy + 8], [-B.sw * 0.6, sy - 6], [B.sw * 0.6, sy - 6], [B.sw, sy + 8], [B.ww, waistY], [B.hw, hipY + 10], [-B.hw, hipY + 10], [-B.ww, waistY]];
+      poly(ctx, torso, c.top || '#6A8AB0', seed + 2, { hatch: true });
+      soft(ctx, B.ww < B.hw ? torso : [[-B.sw, sy + 8], [B.sw, sy + 8], [B.hw, hipY + 10], [-B.hw, hipY + 10]], c.top, SHADE[body]); // a narrow waist (heroic): the shading follows it
+    }
     if (body === 'explainer') { if (c.jacket) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.25, sy - 4], [d * B.sw, sy + 8], [d * B.hw, hipY + 10], [d * B.hw * 0.3, hipY + 10]], c.jacket, seed + 5 + d); }
-    if (c.bottomStyle === 'skirt') poly(ctx, [[-B.ww * 1.02, waistY], [B.ww * 1.02, waistY], [B.hw * 1.6, hipY + B.thigh * 0.55], [-B.hw * 1.6, hipY + B.thigh * 0.55]], c.bottom, seed + 3, { hatch: true });
+    if (c.bottomStyle === 'skirt' && shell) poly(ctx, below(shell, waistY).map(([x, y]) => [x * 1.08, y + (y - waistY) * 0.3]), c.bottom, seed + 3, { hatch: true }); // follows the ball/pear, a little flared
+    else if (c.bottomStyle === 'skirt') poly(ctx, [[-B.ww * 1.02, waistY], [B.ww * 1.02, waistY], [B.hw * 1.6, hipY + B.thigh * 0.55], [-B.hw * 1.6, hipY + B.thigh * 0.55]], c.bottom, seed + 3, { hatch: true });
+    else if (c.bottom && shell) poly(ctx, below(shell, waistY), c.bottom, seed + 3);
     else if (c.bottom) poly(ctx, [[-B.ww, waistY], [B.ww, waistY], [B.hw, hipY + 16], [-B.hw, hipY + 16]], c.bottom, seed + 3);
     if (c.bottomStyle === 'sarong') { // ผ้าถุง: a tube of cloth from the waist to the ankles, a fold at the top, woven bands
       const hem = hipY + (B.thigh + B.shin) * 0.9;
@@ -350,12 +416,12 @@
       ctx.fillStyle = 'rgba(110,50,70,0.1)'; ctx.beginPath(); ctx.ellipse(0, hy - hry * 0.34, hrx * 1.1, hry * 0.36, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
     // eyes, brows, mouth
-    const ey = hy + hry * (B.eye ?? 0.2), ex = hrx * (body === 'chibi' ? 0.42 : 0.38);
+    const ey = hy + hry * (B.eye ?? 0.2), ex = hrx * (B.eyeX ?? (body === 'chibi' ? 0.42 : 0.38));
     for (const d of [-1, 1]) {
-      dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * (body === 'explainer' ? 0.12 : 0.17));
+      dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * (B.eyeR ?? (body === 'explainer' ? 0.12 : 0.17)));
       if (c.glasses) { const gr = hrx * 0.24; ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
     }
-    { mouth(ctx, 0, ey + hry * 0.42, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.2 : 0.12), p, seed + 34, c); /* a smirk/grin must read at phone size */ ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, 24, 12, 0, 0, Math.PI * 2); ctx.fill(); } }
+    { mouth(ctx, 0, ey + hry * 0.42, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.2 : 0.12), p, seed + 34, c); /* a smirk/grin must read at phone size */ ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, Math.min(24, hrx * 0.3), Math.min(12, hrx * 0.15), 0, 0, Math.PI * 2); ctx.fill(); } } // the cheeks shrink only on small heads (heroic)
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.2, ey + 10], [d * ex * 1.5, ey + 2]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
     if (c.mustache) { // two curls just above the mouth
       const my = ey + hry * 0.42 - hry * 0.13, w = hrx * 0.24;
@@ -411,12 +477,28 @@
     // long hair hangs behind the shoulders
     if (c.hair && (c.hairStyle === 'long' || c.hairStyle === 'bangs')) { ctx.save(); ctx.translate(0, hipY + bob); ctx.rotate(p.lean); ctx.translate(0, -hipY); poly(ctx, box(-hrx * 1.12, hy - hry * 0.4, hrx * 1.12, sy + B.torso * 0.28), c.hair, seed + 1); ctx.restore(); }
 
-    // legs: blocks that swing from the hip pin; knees just shorten them a touch
+    // legs: blocks that swing from the hip pin; knees just shorten them a touch. The foot is one moulded piece, a little
+    // flared toward the toe and set into the leg block (no seam), standing on the ground; the shoe style is printed on it
+    // (a toy simplification: no separate shoe volume, no toes, the same slab for every style except the taller boot).
+    const kind = c.shoeStyle || 'sneaker', shoeCol = c.shoes || edge(legCol);
     for (const d of [-1, 1]) {
       const hip = d < 0 ? p.lHip : p.rHip, knee = d < 0 ? p.lKnee : p.rKnee, px = d * B.hw * 0.5, py = hipY + 34 + bob;
-      const L = legLen - 34 - Math.abs(Math.sin(knee)) * 50 - B.foot * 0.3, w = B.leg * 0.5, a = -d * hip * 0.6;
-      poly(ctx, rot(box(px - w, py, px + w, py + L - B.foot), px, py, a), legCol, seed + 50 + d);
-      poly(ctx, rot(box(px - w * 1.08, py + L - B.foot, px + w * 1.08, py + L), px, py, a), c.shoes || edge(legCol), seed + 52 + d); // the foot
+      const L = legLen - 34 - Math.abs(Math.sin(knee)) * 50 + B.foot * 0.3, w = B.leg * 0.5, a = -d * hip * 0.6, bot = py + L;
+      const fh = B.foot * (kind === 'boot' ? 2.1 : kind === 'loafer' ? 0.85 : 1), R = (pts) => rot(pts, px, py, a);
+      const band = (v0, v1) => R(box(px - w * 1.2, bot - v1, px + w * 1.2, bot - v0)); // a horizontal stripe of the foot, v up from the ground
+      poly(ctx, R(box(px - w, py, px + w, bot - fh * 0.5)), legCol, seed + 50 + d);
+      const slab = R([[px - w * 1.04, bot - fh], [px + w * 1.04, bot - fh], [px + w * 1.14, bot - fh * 0.35], [px + w * 1.12, bot], [px - w * 1.12, bot], [px - w * 1.14, bot - fh * 0.35]]);
+      const open = kind === 'sandal' || kind === 'flipflop', F = B.foot;
+      poly(ctx, slab, open ? c.skin : shoeCol, seed + 52 + d); // the foot
+      clipTo(ctx, G.polyPts(slab, 14), () => {
+        const sole = { sneaker: '#F2F0EA', boot: '#2A2420', sandal: '#C9A27A', flipflop: shoeCol }[kind] || shade(shoeCol, -0.5);
+        poly(ctx, band(0, F * ({ sneaker: 0.32, boot: 0.26, sandal: 0.3, flipflop: 0.14 }[kind] || 0.18)), sole, seed + 53 + d, { lw: 2 });
+        if (kind === 'sandal') for (const v of [0.45, 0.75]) poly(ctx, band(F * v, F * (v + 0.17)), shoeCol, seed + 54 + d + v * 10, { lw: 2 }); // two straps
+        if (kind === 'flipflop') G.line(ctx, R([[px - w * 0.9, bot - F * 0.16], [px, bot - F * 0.62], [px + w * 0.9, bot - F * 0.16]]), { color: shoeCol, lw: F * 0.12, seed: seed + 54 + d }); // the thong
+        if (kind === 'loafer') poly(ctx, band(F * 0.42, F * 0.56), shade(shoeCol, -0.28), seed + 54 + d, { lw: 2 }); // the saddle strap
+        if (kind === 'boot') G.line(ctx, R(Array.from({ length: 6 }, (_, k) => [px + (k % 2 ? 1 : -1) * w * 0.3, bot - fh * (0.95 - k * 0.12)])), { color: isLight(shoeCol) ? shade(shoeCol, -0.45) : '#EDE6D8', lw: 3, seed: seed + 54 + d }); // laces
+        if (kind === 'sneaker' || kind === 'leather') for (let k = 0; k < 2; k++) G.line(ctx, R([[px - w * 0.4, bot - fh * (0.82 - k * 0.16)], [px + w * 0.4, bot - fh * (0.82 - k * 0.16)]]), { color: isLight(shoeCol) ? shade(shoeCol, -0.45) : '#EDE6D8', lw: 3, seed: seed + 55 + d + k }); // laces
+      });
     }
 
     // upper body leans and bobs around the hips
@@ -452,7 +534,11 @@
     if (c.hair && c.hairStyle !== 'bald') {
       const H0 = hy - hry * 1.28, fr = hy - hry * 0.42; // crown top, fringe line
       if (c.hairStyle === 'buzz') sh(ctx, [[-hrx * 1.02, hy - hry * 0.3], [-hrx * 0.95, hy - hry * 1.02], [hrx * 0.95, hy - hry * 1.02], [hrx * 1.02, hy - hry * 0.3]], shade(c.hair, 0.25), seed + 41, { lw: 2 });
-      else {
+      else if (c.hairStyle === 'twoblock') { // moulded two block: clipped side panels flush with the head, a raised top slab that overhangs them
+        for (const d of [-1, 1]) poly(ctx, [[d * hrx * 0.9, hy - hry * 0.78], [d * hrx * 1.05, hy - hry * 0.78], [d * hrx * 1.05, hy + hry * 0.02], [d * hrx * 0.9, hy + hry * 0.02]], mix(c.hair, c.skin, 0.55), seed + 41 + d, { lw: 2 });
+        poly(ctx, [[-hrx * 1.16, fr - hry * 0.02], [-hrx * 1.1, H0 + 6], [-hrx * 0.7, H0 - 22], [hrx * 0.7, H0 - 22], [hrx * 1.1, H0 + 6], [hrx * 1.16, fr - hry * 0.02], [hrx * 0.5, fr + hry * 0.06], [-hrx * 0.1, fr], [-hrx * 0.6, fr + hry * 0.06]], c.hair, seed + 42);
+        for (let k = 0; k < 3; k++) G.line(ctx, [[-hrx * (0.5 - k * 0.4), H0 + 4], [-hrx * (0.62 - k * 0.4), fr - 6]], { color: shade(c.hair, 0.3), lw: 4, seed: seed + 43 + k }); // moulded texture on the top
+      } else {
         const side = ['long', 'bob', 'bangs'].includes(c.hairStyle) ? hy + hry * 0.55 : hy + hry * 0.05;
         const cap = [[-hrx * 1.14, side], [-hrx * 1.18, hy - hry * 0.75], [-hrx * 0.82, H0], [hrx * 0.82, H0], [hrx * 1.18, hy - hry * 0.75], [hrx * 1.14, side], [hrx * 0.94, side], [hrx * 0.9, fr], [-hrx * 0.2, fr + hry * 0.1], [-hrx * 0.9, fr], [-hrx * 0.94, side]];
         poly(ctx, cap, c.hair, seed + 42);
