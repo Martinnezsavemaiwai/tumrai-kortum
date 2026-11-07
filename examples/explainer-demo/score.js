@@ -4,7 +4,7 @@
   const node = typeof require !== 'undefined';
   const U = node ? require('./engine/util') : globalThis.U;
   const MU = node ? require('./engine/music') : globalThis.MUSIC;
-  const FPS = 30, FORMAT = U.pickFormat('9:16'), [W, H] = U.formatSize(FORMAT), SAFE = U.safeArea(W, H);
+  const FPS = 60, FORMAT = U.pickFormat('9:16'), [W, H] = U.formatSize(FORMAT), SAFE = U.safeArea(W, H);
   const clock = MU.makeClock({ bpm: 84, offset: 0 });
   const DURATION = 25;
   // [start, end, Thai (*keyword*), English]
