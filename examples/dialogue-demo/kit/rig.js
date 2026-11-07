@@ -62,7 +62,7 @@
   const SPEC = {
     body: Object.keys(BODY),
     colors: ['skin', 'hair', 'eye', 'top', 'collar', 'bottom', 'shoes', 'tie', 'jacket', 'glasses', 'accent', 'sash', 'band', 'belt', 'socks', 'apron', 'bow', 'vest', 'markColor'],
-    hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft', 'buzz'],
+    hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft', 'buzz', 'twoblock', 'comma', 'sidepart', 'swept', 'bangs', 'braids', 'bun', 'curly'],
     bottomStyle: ['skirt', 'pants', 'shorts', 'sarong'],
     shoeStyle: ['sneaker', 'leather', 'flipflop'],
     flags: ['old', 'crown', 'belly', 'mustache', 'sleeveless', 'check'],
@@ -155,7 +155,12 @@
     const tail = (d, ctrl) => sh(ctx, S(d > 0 ? ctrl : mirror(ctrl)), c.hair, seed + d, { lw: 4 });
     if (c.hairStyle === 'twintail') for (const d of [-1, 1]) tail(d, [[0.85, -0.65], [1.5, -0.55], [1.92, 0.2], [1.95, 1.3], [1.7, 2.2], [1.85, 2.75], [1.4, 2.25], [1.32, 1.2], [1.05, 0.1]]);
     if (c.hairStyle === 'ponytail') tail(1, [[0.55, -0.95], [1.3, -0.85], [1.62, 0.1], [1.6, 1.3], [1.32, 2.1], [1.42, 2.55], [1.06, 2.0], [1.12, 0.9], [0.9, -0.1]]);
-    ell(ctx, hx, hy - ry * 0.1, rx * 1.12, ry * 1.08, c.hair, seed + 3);
+    // bangs (หน้าม้า): long and straight, cut level at the back
+    if (c.hairStyle === 'bangs') { const half = [[1.1, -0.35], [1.26, 0.7], [1.28, 2.3], [0.6, 2.36], [0.15, 2.36]]; sh(ctx, S([...mirror(half), ...half]), c.hair, seed, { lw: 4 }); }
+    // bun (มวย): a ball on the crown, half hidden by the front cap
+    if (c.hairStyle === 'bun') ell(ctx, hx, hy - ry * 1.14, rx * 0.44, ry * 0.4, c.hair, seed + 6);
+    const curly = c.hairStyle === 'curly';
+    ell(ctx, hx, hy - ry * 0.1, rx * (curly ? 1.24 : 1.12), ry * (curly ? 1.14 : 1.08), c.hair, seed + 3);
   }
   // ---------- shoes: the foot points outward (d), sole on the ground line ay + foot*0.4 ----------
   //   sneaker = canvas upper, white rubber sole + toe cap, laces · leather = rounded toe, dark heel/sole, shine ·
@@ -184,33 +189,59 @@
     }
     poly(ctx, [[ax - d * B.leg * 0.6, ay - B.foot * 0.3], [ax + d * B.leg * 0.6, ay - B.foot * 0.3], [ax + d * B.foot * 0.9, ay + B.foot * 0.35], [ax - d * B.leg * 0.6, ay + B.foot * 0.35]], col, seed); // plain wedge (same winding both feet)
   }
+  const mix = (p, q, u) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(p.slice(i, i + 2), 16) * (1 - u) + parseInt(q.slice(i, i + 2), 16) * u).toString(16).padStart(2, '0')).join('');
   function hairFront(ctx, c, hx, hy, rx, ry, seed, body) {
     if (!c.hair || c.hairStyle === 'bald') { if (c.old) for (const d of [-1, 1]) ell(ctx, hx + d * rx * 0.95, hy + ry * 0.05, rx * 0.2, ry * 0.32, c.hair || '#D8D4CC', seed + d); return; }
     if (c.hairStyle === 'buzz') { // ทรงนักเรียน/เกรียน: a thin cap hugging the scalp, high straight hairline, no locks
       const cap = [];
       for (let i = 0; i <= 16; i++) { const a = Math.PI * (1.0 + i / 16); cap.push([hx + Math.cos(a) * rx * 1.03, hy - ry * 0.02 + Math.sin(a) * ry * 1.02]); }
       cap.push([hx + rx * 0.98, hy - ry * 0.12], [hx + rx * 0.7, hy - ry * 0.42], [hx - rx * 0.7, hy - ry * 0.42], [hx - rx * 0.98, hy - ry * 0.12]);
-      const mix = (p, q, u) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(p.slice(i, i + 2), 16) * (1 - u) + parseInt(q.slice(i, i + 2), 16) * u).toString(16).padStart(2, '0')).join('');
       sh(ctx, cap, mix(c.hair, c.skin || c.hair, 0.38), seed, { lw: 2 }); // stubble: scalp shows through
       return;
     }
-    // the crown cap plus a fringe of spiky locks down to the brows
-    const cap = [];
-    for (let i = 0; i <= 16; i++) { const a = Math.PI * (1.02 + 0.96 * i / 16); cap.push([hx + Math.cos(a) * rx * 1.1, hy - ry * 0.05 + Math.sin(a) * ry * 1.08]); }
-    const n = c.hairStyle === 'spiky' ? 6 : 5, brow = hy - ry * (body === 'chibi' ? 0.25 : 0.3), fw = 1.08, notch = 0.2;
-    for (let i = n; i >= 0; i--) {
-      const u = i / n, x0 = hx + rx * fw * (2 * u - 1);
-      cap.push([x0, brow + (i % 2 ? 0 : ry * 0.22) + (c.hairStyle === 'spiky' ? ry * 0.08 : 0)]);
-      if (i > 0) cap.push([x0 - rx * notch, brow - ry * 0.12]);
-    }
+    const st = c.hairStyle, brow = hy - ry * (body === 'chibi' ? 0.25 : 0.3), P = (u, v) => [hx + u * rx, hy + v * ry], B = (u, dv = 0) => [hx + u * rx, brow + dv * ry];
+    const arc = (r = 1.1) => { const out = []; for (let i = 0; i <= 16; i++) { const a = Math.PI * (1.02 + 0.96 * i / 16); out.push([hx + Math.cos(a) * rx * r, hy - ry * 0.05 + Math.sin(a) * ry * 1.08]); } return out; };
+    // the default fringe: n locks down to the brows (right to left, to close the crown arc)
+    const locks = (n, dip = 0.22, notch = 0.2, drop = 0) => { const out = []; for (let i = n; i >= 0; i--) { const x0 = hx + rx * 1.08 * (2 * i / n - 1); out.push([x0, brow + (i % 2 ? 0 : ry * dip) + drop * ry]); if (i > 0) out.push([x0 - rx * notch, brow - ry * 0.12 + drop * ry]); } return out; };
+    if (st === 'twoblock') for (const d of [-1, 1]) ell(ctx, hx + d * rx * 0.96, hy - ry * 0.12, rx * 0.2, ry * 0.46, mix(c.hair, c.skin || c.hair, 0.55), seed + 2 + d, { lw: 2 }); // clipped sides: scalp shows
+    let cap;
+    if (st === 'twoblock') cap = [...arc(1.0).map(([x, y]) => [x, y - ry * 0.08]), P(1.0, -0.42), ...locks(4, 0.08, 0.08, 0.1).map(([x, y]) => [hx + (x - hx) * 0.9, y]), P(-1.0, -0.42)]; // a full, raised top over clipped sides, a thick even fringe
+    else if (st === 'comma') cap = [...arc(), B(1.08, 0.3), B(0.86, 0.34), B(0.5, 0.18), B(0.1, -0.5), B(-0.1, -0.5), B(-0.5, 0.18), B(-0.86, 0.34), B(-1.08, 0.3)]; // curtain fringe from a deep centre part
+    else if (st === 'sidepart') cap = [...arc().map(([x, y]) => [x, y - ry * 0.22 * Math.max(0, 1 - Math.abs(x - hx - rx * 0.25) / (rx * 0.85))]), B(1.08, 0.3), B(0.9, 0.24), B(0.4, 0.04), B(-0.05, -0.2), P(-0.4, -0.78), P(-0.72, -0.52), P(-1.06, -0.2)]; // volume swept up and over from a part on the left
+    else if (st === 'bangs') cap = [...arc(), B(1.08, 0.14), B(-1.08, 0.14)]; // a straight, blunt fringe
+    else if (st === 'bun') cap = [...arc(), P(1.06, -0.1), P(0.82, -0.46), P(0.3, -0.64), P(-0.3, -0.64), P(-0.82, -0.46), P(-1.06, -0.1)]; // pulled back off the forehead
+    else if (st === 'swept') { // flame-like locks that rise and sweep back to the right, from one piece of hair
+      cap = [P(-1.08, 0.05)];
+      const L = [0.42, 0.62, 0.76, 0.7, 0.56, 0.4], n = L.length;
+      for (let k = 0; k < n; k++) {
+        const a = Math.PI * (1.08 + 0.84 * (k + 0.5) / n), a0 = a - 0.42 / n * Math.PI, bx = Math.cos(a), by = Math.sin(a);
+        cap.push([hx + Math.cos(a0) * rx * 1.02, hy - ry * 0.05 + Math.sin(a0) * ry * 1.0]);
+        const ta = Math.atan2(by * 0.55 - 0.45, bx * 0.55 + 0.32); // pulled toward up and back-right
+        cap.push([hx + bx * rx * 1.02 + Math.cos(ta) * ry * L[k], hy - ry * 0.05 + by * ry * 1.0 + Math.sin(ta) * ry * L[k]]);
+      }
+      cap.push(P(1.06, -0.25), P(1.08, 0.05), ...locks(4, 0.2, 0.18));
+    } else cap = [...arc(), ...locks(st === 'spiky' ? 6 : 5, 0.22, 0.2, st === 'spiky' ? 0.08 : 0)];
     sh(ctx, cap, c.hair, seed);
+    if (st === 'comma') for (const d of [-1, 1]) G.line(ctx, [B(d * 0.2, -0.3), B(d * 0.5, 0.12), B(d * 0.38, 0.26), B(d * 0.3, 0.16)], { color: shade(c.hair, -0.4), lw: 9, seed: seed + 8 + d }); // the comma curls tucked in at the tips
+    if (st === 'sidepart') G.line(ctx, [P(-0.4, -0.78), P(-0.44, -0.98)], { color: c.skin || shade(c.hair, 0.5), lw: 6, seed: seed + 8 }); // the parting: a line of scalp
+    if (st === 'curly') { // ผมดัด: a ring of tight curls over the crown and the sides, small curls on the forehead
+      for (let k = 0; k <= 11; k++) { const a = Math.PI * (0.92 + 1.16 * k / 11); ell(ctx, hx + Math.cos(a) * rx * 1.04, hy - ry * 0.08 + Math.sin(a) * ry * 0.98, rx * 0.28, ry * 0.26, c.hair, seed + 50 + k, { lw: 3 }); }
+      for (let k = 0; k < 4; k++) ell(ctx, hx + rx * (-0.54 + k * 0.36), brow - ry * 0.02, rx * 0.22, ry * 0.18, shade(c.hair, 0.08), seed + 64 + k, { lw: 3 });
+    }
     // side locks framing the face: tapered curves, down to the jaw for long hair and bobs
-    const lock = { long: 0.95, bob: 1.02, twintail: 0.7, ponytail: 0.6 }[c.hairStyle] ?? 0.55;
-    if (c.hairStyle !== 'spiky') for (const d of [-1, 1]) {
+    const lock = { long: 0.95, bob: 1.02, twintail: 0.7, ponytail: 0.6, bangs: 1.15, braids: 0.6, bun: 0.42, swept: 0.42 }[st] ?? 0.55;
+    if (!['spiky', 'twoblock', 'curly'].includes(st)) for (const d of [-1, 1]) {
       const ctrl = [[0.9, -0.45], [1.14, 0.1], [1.12, lock * 0.7], [1.0, lock], [0.94, lock * 0.55], [0.86, 0.05]];
       sh(ctx, spline(d > 0 ? ctrl : mirror(ctrl), hx, hy, rx, ry, 4), c.hair, seed + 4 + d, { lw: 3 });
     }
     if (c.hairStyle === 'ponytail') ell(ctx, hx + rx * 0.62, hy - ry * 0.9, 14, 12, c.accent || '#E8506A', seed + 33, { lw: 3 }); // the hair tie
+    if (st === 'bun') ell(ctx, hx, hy - ry * 1.12, rx * 0.3, ry * 0.06, c.accent || '#E8506A', seed + 34, { lw: 3 }); // the band round the bun
+    if (st === 'braids') for (const d of [-1, 1]) { // ผมเปียสองข้าง: two plaits hanging in front of the shoulders, a tie and a tuft at the end
+      for (let j = 0; j < 6; j++) ell(ctx, hx + d * rx * (1.0 + (j % 2 ? 0.04 : -0.04)), hy + ry * (0.38 + j * 0.3), rx * 0.17, ry * 0.18, c.hair, seed + 70 + j * 2 + d, { lw: 3 });
+      const ey = hy + ry * (0.38 + 6 * 0.3 - 0.1);
+      poly(ctx, [[hx + d * rx * 0.92, ey], [hx + d * rx * 1.08, ey], [hx + d * rx * 1.14, ey + ry * 0.28], [hx + d * rx * 0.86, ey + ry * 0.28]], c.hair, seed + 84 + d, { lw: 3 });
+      ell(ctx, hx + d * rx * 1.0, ey, rx * 0.12, ry * 0.05, c.accent || '#E8506A', seed + 86 + d, { lw: 2 });
+    }
     if (c.hairStyle === 'spiky') for (let k = 0; k < 5; k++) { const a = Math.PI * (1.1 + k * 0.2); poly(ctx, [[hx + Math.cos(a - 0.12) * rx, hy + Math.sin(a - 0.12) * ry], [hx + Math.cos(a) * rx * 1.45, hy + Math.sin(a) * ry * 1.4], [hx + Math.cos(a + 0.12) * rx, hy + Math.sin(a + 0.12) * ry]], c.hair, seed + 10 + k); }
     // shine band
     ctx.save(); ctx.globalAlpha = 0.35; G.line(ctx, [[hx - rx * 0.6, hy - ry * 0.72], [hx - rx * 0.1, hy - ry * 0.86], [hx + rx * 0.4, hy - ry * 0.78]], { color: shade(c.hair, 0.6), lw: 8, seed: seed + 20 }); ctx.restore();
@@ -378,7 +409,7 @@
     const legCol = c.bottom || '#3A4A6A';
 
     // long hair hangs behind the shoulders
-    if (c.hair && c.hairStyle === 'long') { ctx.save(); ctx.translate(0, hipY + bob); ctx.rotate(p.lean); ctx.translate(0, -hipY); poly(ctx, box(-hrx * 1.12, hy - hry * 0.4, hrx * 1.12, sy + B.torso * 0.28), c.hair, seed + 1); ctx.restore(); }
+    if (c.hair && (c.hairStyle === 'long' || c.hairStyle === 'bangs')) { ctx.save(); ctx.translate(0, hipY + bob); ctx.rotate(p.lean); ctx.translate(0, -hipY); poly(ctx, box(-hrx * 1.12, hy - hry * 0.4, hrx * 1.12, sy + B.torso * 0.28), c.hair, seed + 1); ctx.restore(); }
 
     // legs: blocks that swing from the hip pin; knees just shorten them a touch
     for (const d of [-1, 1]) {
@@ -422,11 +453,15 @@
       const H0 = hy - hry * 1.28, fr = hy - hry * 0.42; // crown top, fringe line
       if (c.hairStyle === 'buzz') sh(ctx, [[-hrx * 1.02, hy - hry * 0.3], [-hrx * 0.95, hy - hry * 1.02], [hrx * 0.95, hy - hry * 1.02], [hrx * 1.02, hy - hry * 0.3]], shade(c.hair, 0.25), seed + 41, { lw: 2 });
       else {
-        const side = c.hairStyle === 'long' || c.hairStyle === 'bob' ? hy + hry * 0.55 : hy + hry * 0.05;
+        const side = ['long', 'bob', 'bangs'].includes(c.hairStyle) ? hy + hry * 0.55 : hy + hry * 0.05;
         const cap = [[-hrx * 1.14, side], [-hrx * 1.18, hy - hry * 0.75], [-hrx * 0.82, H0], [hrx * 0.82, H0], [hrx * 1.18, hy - hry * 0.75], [hrx * 1.14, side], [hrx * 0.94, side], [hrx * 0.9, fr], [-hrx * 0.2, fr + hry * 0.1], [-hrx * 0.9, fr], [-hrx * 0.94, side]];
         poly(ctx, cap, c.hair, seed + 42);
         if (c.hairStyle === 'spiky') for (let k = 0; k < 5; k++) { const x = -hrx * 0.8 + k * hrx * 0.4; poly(ctx, [[x - 26, H0 + 8], [x + 4, H0 - 46], [x + 26, H0 + 8]], c.hair, seed + 44 + k); }
         if (c.hairStyle === 'twintail' || c.hairStyle === 'ponytail') for (const d of c.hairStyle === 'twintail' ? [-1, 1] : [1]) ell(ctx, d * hrx * 1.3, hy - hry * 0.3, hrx * 0.28, hry * 0.6, c.hair, seed + 46 + d);
+        if (c.hairStyle === 'bun') ell(ctx, 0, H0 - 20, hrx * 0.4, hry * 0.32, c.hair, seed + 50);
+        if (c.hairStyle === 'braids') for (const d of [-1, 1]) for (let j = 0; j < 4; j++) ell(ctx, d * hrx * 1.08, hy + hry * (0.4 + j * 0.34), hrx * 0.17, hry * 0.2, c.hair, seed + 52 + j * 2 + d);
+        if (c.hairStyle === 'curly') for (let k = 0; k < 7; k++) ell(ctx, -hrx * 0.96 + k * hrx * 0.32, H0 + 10, hrx * 0.2, hry * 0.18, c.hair, seed + 60 + k);
+        if (c.hairStyle === 'swept') for (let k = 0; k < 4; k++) { const x = -hrx * 0.7 + k * hrx * 0.42; poly(ctx, [[x - 30, H0 + 10], [x + 34, H0 - 50 - (k === 1 || k === 2 ? 14 : 0)], [x + 28, H0 + 10]], c.hair, seed + 66 + k); }
         ctx.save(); ctx.globalAlpha = 0.3; G.line(ctx, [[-hrx * 0.6, H0 + 26], [0, H0 + 14], [hrx * 0.5, H0 + 24]], { color: shade(c.hair, 0.7), lw: 10, seed: seed + 48 }); ctx.restore(); // moulded shine
       }
     }

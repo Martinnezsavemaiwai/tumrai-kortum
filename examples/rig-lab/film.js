@@ -103,10 +103,10 @@
       const who = Object.keys(R.CAST);
       who.forEach((k, i) => { const x = 260 + i * 350; fig(ctx, { x, y: 960, s: 0.78, body: 'chibi', who: k, ...R.POSES.idle }); tag(ctx, k, x, 1010); });
     } else if (page === 8) { // every hair style on one face and colour
-      R.SPEC.hairStyle.filter((h) => h !== 'tuft').forEach((h, i) => {
-        const x = 170 + i * 225;
-        fig(ctx, { x, y: 960, s: 0.6, body: i % 2 ? 'chibi' : 'explainer', who: { ...R.CAST.nok, hairStyle: h, hair: '#5A3A2A' }, ...R.POSES.idle });
-        tag(ctx, h, x, 1010);
+      R.SPEC.hairStyle.filter((h) => h !== 'tuft').forEach((h, i) => { // two rows of eight
+        const x = 140 + (i % 8) * 235, y = i < 8 ? 500 : 1000;
+        fig(ctx, { x, y, s: 0.36, body: 'chibi', who: { ...R.CAST.nok, hairStyle: h, hair: '#5A3A2A' }, ...R.POSES.idle });
+        tag(ctx, h, x, y + 40);
       });
     } else if (page === 9) { // the series cast, straight from the bible (story.mjs cast demo-dorm9 ep3 --out cast.js)
       ['praew', 'phum', 'jan'].filter((k) => R.CAST[k]).forEach((k, i) => { const x = 450 + i * 500; fig(ctx, { x, y: 960, s: 0.78, who: k, ...R.POSES.idle }); tag(ctx, `${R.CAST[k].name} (${k})`, x, 1010); });
