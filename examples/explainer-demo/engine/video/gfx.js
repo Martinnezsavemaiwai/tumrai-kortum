@@ -40,14 +40,11 @@
 
   // ---------- style packs: one switch changes how every shape, line, text and the finish look ----------
   // score.js: STYLE: 'chalk' (or render with --style chalk). Films keep their own colours; a style changes
-  // the technique. Dark styles (chalk, neon) also give G.C.ink a light colour and G.bg(ctx) a board.
+  // the technique. A dark style (chalk) also gives G.C.ink a light colour and G.bg(ctx) a board.
   G.STYLES = {
     paper: { amp: 1, lw: 1, second: true, hatch: true, textBoil: 1, boilFps: 12, post: { paper: 0.55, grain: 0.05, vignette: 0.35 } },
     flat: { amp: 0, lw: 0, second: false, hatch: false, textBoil: 0, boilFps: 12, flat: true, post: { paper: 0, grain: 0, vignette: 0.1 } },
-    pixel: { amp: 0, lw: 1, second: false, hatch: false, textBoil: 0, boilFps: 8, pixel: 6, post: { paper: 0, grain: 0, vignette: 0.12 } },
     chalk: { amp: 1.5, lw: 0.9, second: true, hatch: true, textBoil: 1.2, boilFps: 8, chalk: true, bg: '#2E4638', ink: '#F2EEE3', post: { paper: 0, grain: 0.06, vignette: 0.45, chalk: 1 } },
-    neon: { amp: 0.3, lw: 0.8, second: false, hatch: false, textBoil: 0.2, boilFps: 12, neon: true, bg: '#07071A', ink: '#DDF3FF', post: { paper: 0, grain: 0.04, vignette: 0.5, bloom: 0.9 } },
-    watercolor: { amp: 1.4, lw: 0.5, second: false, hatch: false, textBoil: 0.6, boilFps: 6, wash: true, post: { paper: 0.95, grain: 0.03, vignette: 0.22 } },
   };
   const INK0 = G.C.ink;
   G.setStyle = (name = 'paper', over = {}) => {
@@ -58,7 +55,7 @@
     G.C.ink = G.style.ink || INK0;
     return G.style;
   };
-  // the style's background (a chalkboard, a night for neon, paper otherwise); `color` for the paper look
+  // the style's background (a chalkboard, paper otherwise); `color` for the paper look
   G.bg = (ctx, color = G.C.paper) => {
     const S = G.style;
     ctx.save();
@@ -72,28 +69,14 @@
         ctx.fillStyle = g; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
       }
     }
-    if (S.neon) { const g = ctx.createRadialGradient(G.W / 2, G.H * 0.6, 0, G.W / 2, G.H * 0.6, Math.max(G.W, G.H) * 0.8); g.addColorStop(0, 'rgba(60,30,120,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, G.W, G.H); }
     ctx.restore();
   };
   const hexRGB = (c) => { const m = /^#([0-9a-f]{6})$/i.exec(String(c).trim()); if (!m) return null; const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
-  // a colour pushed toward full brightness (neon tubes), or darkened (a watercolour's pooled edge)
+  // a colour pushed toward white (k > 0) or darkened (k < 0)
   G.tint = (c, k) => { const v = hexRGB(c); if (!v) return c; const f = (x) => Math.round(k >= 0 ? x + (255 - x) * k : x * (1 + k)); return `rgb(${f(v[0])},${f(v[1])},${f(v[2])})`; };
-  // a wobble that does not boil (watercolour washes stay put)
-  const still = (pts, seed, amp) => pts.map((p, i) => [p[0] + (H(seed, i) - 0.5) * 2 * amp, p[1] + (H(seed, i + 7919) - 0.5) * 2 * amp]);
-  // chalk and neon strokes
+  // chalk strokes
   const styledStroke = (ctx, pts, closed, color, lw, seed) => {
     const S = G.style;
-    if (S.neon) {
-      ctx.save();
-      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      ctx.shadowColor = color; ctx.shadowBlur = 22 * (G.scale || 1);
-      ctx.strokeStyle = color; ctx.lineWidth = Math.max(2, lw);
-      ctx.beginPath(); G.path(ctx, pts, closed); ctx.stroke();
-      ctx.shadowBlur = 0; ctx.strokeStyle = G.tint(color, 0.75); ctx.lineWidth = Math.max(1, lw * 0.35);
-      ctx.stroke();
-      ctx.restore();
-      return true;
-    }
     if (S.chalk) {
       ctx.save();
       ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = color;
@@ -214,28 +197,18 @@
     const p = amp > 0 ? G.wobble(pts, seed, amp) : pts;
     ctx.save();
     if (alpha !== 1) ctx.globalAlpha *= alpha;
-    if (S.wash && fill && closed) {
-      // watercolour: three thin, slightly different washes, and pigment pooled at the edge
-      const edge = G.tint(fill, -0.25);
-      for (let k = 0; k < 3; k++) { const q = still(pts, seed + k * 31, 5 + k * 3); ctx.beginPath(); G.path(ctx, q, true); ctx.globalAlpha = alpha * 0.36; ctx.fillStyle = fill; ctx.fill(); if (k === 0) { ctx.globalAlpha = alpha * 0.3; ctx.strokeStyle = edge; ctx.lineWidth = 3.5; ctx.stroke(); } }
-      ctx.globalAlpha = alpha;
-    } else if (S.neon && fill && closed) {
-      ctx.beginPath(); G.path(ctx, p, closed);
-      ctx.globalAlpha *= 0.16; ctx.fillStyle = fill; ctx.fill(); ctx.globalAlpha /= 0.16;
-    } else {
-      ctx.beginPath();
-      G.path(ctx, p, closed);
-      if (fill && closed) { if (S.chalk) ctx.globalAlpha *= 0.6; ctx.fillStyle = fill; ctx.fill(); if (S.chalk) ctx.globalAlpha /= 0.6; }
-      if (S.chalk && fill && closed) { ctx.save(); ctx.clip(); G.hatch(ctx, bbox(p), { color: fill, gap: 5, lw: 2.4, jitter: 3, angle: -0.8, seed: seed + 3 }); ctx.restore(); }
-    }
-    if (hatch && closed && !S.wash) {
+    ctx.beginPath();
+    G.path(ctx, p, closed);
+    if (fill && closed) { if (S.chalk) ctx.globalAlpha *= 0.6; ctx.fillStyle = fill; ctx.fill(); if (S.chalk) ctx.globalAlpha /= 0.6; }
+    if (S.chalk && fill && closed) { ctx.save(); ctx.clip(); G.hatch(ctx, bbox(p), { color: fill, gap: 5, lw: 2.4, jitter: 3, angle: -0.8, seed: seed + 3 }); ctx.restore(); }
+    if (hatch && closed) {
       ctx.save();
       ctx.beginPath(); G.path(ctx, p, closed);
       ctx.clip();
       G.hatch(ctx, bbox(p), Object.assign({ seed: seed + 11 }, hatch));
       ctx.restore();
     }
-    const col = S.neon && (!stroke || stroke === G.C.ink) && fill ? G.tint(fill, 0.25) : stroke;
+    const col = stroke;
     if (col && lw > 0) {
       if (!styledStroke(ctx, p, closed, col, lw, seed)) {
         ctx.beginPath();
@@ -244,7 +217,6 @@
         ctx.strokeStyle = col;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        if (S.wash) ctx.globalAlpha *= 0.55;
         ctx.stroke();
         if (second) {
           const p2 = G.wobble(pts, seed + 5, amp * 1.4 + 0.6);
@@ -292,7 +264,6 @@
   G.limb = (ctx, pts, { color, lw = 26, ink = G.C.ink, outline = 4.5, seed = 1 } = {}) => {
     const p = G.style.amp > 0 ? G.wobble(pts, seed, 1.2 * G.style.amp) : pts;
     if (G.style.flat) outline = 0;
-    if (G.style.neon) { styledStroke(ctx, p, false, G.tint(color, 0.2), lw * 0.5, seed); return; }
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -454,7 +425,6 @@
     ctx.save();
     ctx.globalAlpha *= alpha;
     const j = G.jit(str.length * 13 + size, 1, boil * G.style.textBoil);
-    if (G.style.neon) { ctx.shadowColor = color; ctx.shadowBlur = size * 0.35 * (G.scale || 1); }
     if (simple(str)) {
       ctx.font = G.font(size, fam, weight);
       ctx.textAlign = align;
@@ -589,19 +559,12 @@
   };
 
   // the finish, after the film draws: paper texture, vignette, grain, and each style's own pass
-  // (pixel: blocky pixels · neon: bloom · chalk: dusty, broken strokes). A film's own options win.
+  // (bloom: a soft glow · chalk: dusty, broken strokes). A film's own options win.
   G.post = (ctx, t, opts = {}) => {
     const S = G.style;
     const { vignette = 0.35, grain = 0.05, paper = 0.55, bloom = 0, chalk = 0 } = Object.assign({}, S.post, opts);
     const cv = ctx.canvas, k = G.scale || 1;
     ctx.save();
-    if (S.pixel) {
-      // draw the frame tiny, then back up with hard edges
-      const px = S.pixel * k, w = Math.max(1, Math.round(cv.width / px)), h = Math.max(1, Math.round(cv.height / px));
-      const off = G.scratch('pixel', w, h), ox = off.getContext('2d');
-      ox.imageSmoothingEnabled = true; ox.clearRect(0, 0, w, h); ox.drawImage(cv, 0, 0, w, h);
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, w, h, 0, 0, cv.width, cv.height); ctx.imageSmoothingEnabled = true;
-    }
     if (bloom > 0) {
       const w = Math.ceil(cv.width / 4), h = Math.ceil(cv.height / 4);
       const off = G.scratch('bloom', w, h), ox = off.getContext('2d');

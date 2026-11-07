@@ -13,7 +13,7 @@
 //   node engine/render.js analyze song.mp3        -> tempo, beats, bars, sections, lyrics of your own song (beats.js)
 //   node engine/render.js snap https://site       -> a phone (or --desktop) screenshot of a live site in assets/
 //   more: brand brand-from plan qa pacing poster formats srt (engine/tools/*.js)
-//   add --gif to clip for a shareable GIF next to the MP4 · --draft for half resolution · --res 1440 (2K) / 2160 (4K) · --format 9:16 · --style neon
+//   add --gif to clip for a shareable GIF next to the MP4 · --draft for half resolution · --res 1440 (2K) / 2160 (4K) · --format 9:16 · --style chalk
 // Anywhere a time is expected: seconds (12.5), bar:beat from the score clock (8:2 = T(8, 2)),
 // or a named marker from score.js `markers` with an optional offset in seconds (@drop, @drop-2, @drop+0.5).
 const { spawn, execFileSync } = require('child_process');
@@ -721,16 +721,7 @@ async function main() {
       console.log(`out/${path.basename(g)} (${(fs.statSync(g).size / 1e6).toFixed(1)} MB)`);
     }
   } else if (mode === 'video') {
-    const ri = args.indexOf('--range'); // --range <from> <to>: one section into out/parts/ (long videos: render-long.mjs)
-    const workers = parseInt((ri === 0 ? args[3] : args[0]) || String(Math.max(2, os.cpus().length - 1)), 10);
-    if (ri >= 0) {
-      const f0 = Math.round(parseTime(args[ri + 1]) * FPS), f1 = Math.min(Math.round(DURATION * FPS), Math.round(parseTime(args[ri + 2]) * FPS));
-      const dest = path.join(OUT, 'parts', `part_${String(f0).padStart(7, '0')}-${String(f1).padStart(7, '0')}${SUFFIX}.mp4`);
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      const { frames, secs } = await renderRange(f0, f1, workers, dest);
-      console.log(`${path.relative(ROOT, dest)} done in ${secs.toFixed(1)}s (${frames} frames verified)`);
-      return;
-    }
+    const workers = parseInt(args[0] || String(Math.max(2, os.cpus().length - 1)), 10);
     const { frames, secs } = await renderRange(0, Math.round(DURATION * FPS), workers, VIDEO);
     console.log(`out/${path.basename(VIDEO)} done in ${secs.toFixed(1)}s (${frames} frames verified${DRAFT ? ', draft: half resolution' : ''})`);
   }

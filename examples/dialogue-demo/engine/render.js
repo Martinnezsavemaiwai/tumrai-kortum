@@ -13,7 +13,7 @@
 //   node engine/render.js analyze song.mp3        -> tempo, beats, bars, sections, lyrics of your own song (beats.js)
 //   node engine/render.js snap https://site       -> a phone (or --desktop) screenshot of a live site in assets/
 //   more: brand brand-from plan qa pacing poster formats srt (engine/tools/*.js)
-//   add --gif to clip for a shareable GIF next to the MP4 · --draft for half resolution · --res 1440 (2K) / 2160 (4K) · --format 9:16 · --style neon
+//   add --gif to clip for a shareable GIF next to the MP4 · --draft for half resolution · --res 1440 (2K) / 2160 (4K) · --format 9:16 · --style chalk
 // Anywhere a time is expected: seconds (12.5), bar:beat from the score clock (8:2 = T(8, 2)),
 // or a named marker from score.js `markers` with an optional offset in seconds (@drop, @drop-2, @drop+0.5).
 const { spawn, execFileSync } = require('child_process');
