@@ -12,6 +12,8 @@
 //   diorama   โมเดลจิ๋ว: painted shapes with contact shadows, tilt-shift blur top and bottom, rich colour — towns, slice of life
 //   clay      ดินปั้น: rounded shading, a darker edge in the same colour, thumbprint smudges, stop-motion jitter — kids, comedy
 //   lowpoly   โลว์โพลี: shapes cut to ≤ 10 corners, faceted into triangles lit from the top left — games, tech, adventure
+//   bricks    ตัวต่อพลาสติก: glossy toy plastic; walls and floors built from bricks with seams and studs — toys, kids, builds
+//   early3d   เกม 3D ยุคแรก: polygon silhouettes, smooth top-to-bottom shading, a hot highlight, soft low-res frame + bloom — games
 // riso, pixelart, retro and diorama do part of their look in G.grade: call it before the subtitles, as below.
 // Load after engine/video/gfx.js, before chibi.js:  <script src="kit/art.js"></script>
 // Pick it like any engine style: score.js STYLE = 'woodcut', or render with --style woodcut.
@@ -110,6 +112,30 @@
   // low poly: keep at most n corners of an outline (an ellipse becomes a decagon)
   const corners = (p, n = 10) => (p.length <= n ? p : Array.from({ length: n }, (_, i) => p[Math.floor((i * p.length) / n)]));
   const LIGHT = [-0.6, -0.8]; // toward the light, top left
+  const straight = (ctx, q) => { ctx.beginPath(); ctx.moveTo(...q[0]); for (const c of q.slice(1)) ctx.lineTo(...c); ctx.closePath(); }; // G.path rounds corners
+  // toy plastic: a soft top light and one sharp highlight near the top left
+  function gloss(ctx, p, bb, k = 1) {
+    const w = bb[2] - bb[0], h = bb[3] - bb[1], g = ctx.createLinearGradient(0, bb[1], 0, bb[3]);
+    g.addColorStop(0, `rgba(255,255,255,${0.3 * k})`); g.addColorStop(0.5, 'rgba(255,255,255,0)'); g.addColorStop(1, `rgba(0,0,20,${0.2 * k})`);
+    ctx.save(); ctx.beginPath(); G.path(ctx, p, true); ctx.clip(); plain(ctx, p, g);
+    ctx.fillStyle = `rgba(255,255,255,${0.55 * k})`; ctx.beginPath(); ctx.ellipse(bb[0] + w * 0.28, bb[1] + h * 0.2, w * 0.1, h * 0.06, -0.5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  // a wall or floor built from bricks: staggered seams, and studs along each course (seen from the front, slightly above)
+  function bricks(ctx, p, v, bb) {
+    const BH = 48, BW = 96, dark = css(mix(v, [0, 0, 20], 0.28), 1), lite = css(mix(v, [255, 255, 255], 0.35), 1);
+    ctx.save(); ctx.beginPath(); G.path(ctx, p, true); ctx.clip();
+    ctx.strokeStyle = dark; ctx.lineWidth = 3; ctx.beginPath();
+    for (let y = Math.floor(bb[1] / BH) * BH, r = 0; y < bb[3]; y += BH, r++) {
+      ctx.moveTo(bb[0], y); ctx.lineTo(bb[2], y);
+      for (let x = Math.floor(bb[0] / BW) * BW + (r % 2 ? BW / 2 : 0); x < bb[2]; x += BW) { ctx.moveTo(x, y); ctx.lineTo(x, y + BH); }
+    }
+    ctx.stroke();
+    for (let y = Math.floor(bb[1] / BH) * BH + BH * 0.5, r = 0; y < bb[3]; y += BH, r++) for (let x = Math.floor(bb[0] / (BW / 2)) * (BW / 2) + BW / 4; x < bb[2]; x += BW / 2) {
+      ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(x, y + 3, 15, 8, 0, 0, Math.PI * 2); ctx.fill(); // the stud's shadow
+      ctx.fillStyle = lite; ctx.beginPath(); ctx.ellipse(x, y, 15, 8, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
 
   // ---------- each style: how a filled shape and an outline are drawn ----------
   const ART = {
@@ -248,6 +274,27 @@
       stroke(ctx, p, closed, lw, seed, col) { if (!closed) line(ctx, corners(p, 6), false, lw * 1.2, ink(col)); },
       limbColor: (v) => v, outline: 0,
     },
+    bricks: {
+      fill(ctx, p, v) {
+        const bb = G.bbox(p);
+        plain(ctx, p, css(v));
+        if (bb[2] - bb[0] >= 900 || bb[3] - bb[1] >= 900) return bricks(ctx, p, v, bb); // walls and floors are built
+        if (fig(bb)) { gloss(ctx, p, bb); line(ctx, p, true, 2.5, css(mix(v, [0, 0, 20], 0.3), v[3])); } // pieces are moulded plastic
+      },
+      stroke(ctx, p, closed, lw, seed, col) { if (!closed) line(ctx, p, false, lw * 1.2, ink(col)); },
+      limbColor: (v) => v, outline: 0.6, ink: (v) => css(mix(v, [0, 0, 20], 0.3)),
+    },
+    early3d: {
+      fill(ctx, p, v) {
+        const bb = G.bbox(p), q = fig(bb) ? corners(p, 14) : p; // figures are meshes: a visible polygon edge
+        const g = ctx.createLinearGradient(0, bb[1], 0, bb[3]); // vertex shading: lit from above
+        g.addColorStop(0, css(mix(v, [255, 255, 245], 0.28))); g.addColorStop(1, css(mix(v, [10, 10, 30], 0.4)));
+        ctx.fillStyle = g; if (fig(bb)) straight(ctx, q); else { ctx.beginPath(); G.path(ctx, p, true); } ctx.fill();
+        if (fig(bb)) { ctx.save(); straight(ctx, q); ctx.clip(); const w = bb[2] - bb[0], h = bb[3] - bb[1], hl = ctx.createRadialGradient(bb[0] + w * 0.3, bb[1] + h * 0.22, 0, bb[0] + w * 0.3, bb[1] + h * 0.22, Math.max(w, h) * 0.3); hl.addColorStop(0, 'rgba(255,255,255,0.45)'); hl.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = hl; ctx.fillRect(bb[0], bb[1], w, h); ctx.restore(); } // the hot specular
+      },
+      stroke(ctx, p, closed, lw, seed, col) { if (!closed) line(ctx, corners(p, 8), false, lw * 1.2, ink(col)); },
+      limbColor: (v) => v, outline: 0,
+    },
   };
 
   Object.assign(G.STYLES, {
@@ -263,6 +310,8 @@
     diorama: { amp: 0, lw: 1, second: false, hatch: false, textBoil: 0, boilFps: 12, art: 'diorama', post: { paper: 0, grain: 0.03, vignette: 0.25 } },
     clay: { amp: 0.7, lw: 1, second: false, hatch: false, textBoil: 0.3, boilFps: 6, art: 'clay', post: { paper: 0, grain: 0.05, vignette: 0.3 } }, // 6 fps boil = shot on threes, like stop motion
     lowpoly: { amp: 0, lw: 1, second: false, hatch: false, textBoil: 0, boilFps: 12, art: 'lowpoly', post: { paper: 0, grain: 0.02, vignette: 0.2 } },
+    bricks: { amp: 0, lw: 1, second: false, hatch: false, textBoil: 0, boilFps: 12, art: 'bricks', post: { paper: 0, grain: 0.02, vignette: 0.15 } },
+    early3d: { amp: 0, lw: 1, second: false, hatch: false, textBoil: 0, boilFps: 12, art: 'early3d', post: { paper: 0, grain: 0.03, vignette: 0.3, bloom: 0.35 } },
   });
 
   const shape0 = G.shape, line0 = G.line, limb0 = G.limb;
@@ -314,7 +363,18 @@
     diorama: [['saturation', '#FF0000', 0.1], [tiltShift]], // a little richer, then blur top and bottom like a macro lens
     pixelart: [[pixelate]],
     clay: [['saturation', '#FF0000', 0.08], ['multiply', '#FFF1DC', 0.25]], // a warm studio light
+    bricks: [['saturation', '#FF0000', 0.15]], // toy colours
+    early3d: [[lowres], ['saturation', '#FF0000', 0.1]], // the console's resolution: soft, a little banded
   };
+  // early 3D: render at ~40% size and scale back up smooth, then snap to 32 levels a channel for colour banding
+  function lowres(ctx, c) {
+    const w = Math.round(c.width * 0.4), h = Math.round(c.height * 0.4), s = G.scratch('lowres', w, h), sx = s.getContext('2d', { willReadFrequently: true });
+    sx.imageSmoothingEnabled = true; sx.clearRect(0, 0, w, h); sx.drawImage(c, 0, 0, w, h);
+    const im = sx.getImageData(0, 0, w, h), d = im.data;
+    for (let i = 0; i < d.length; i += 4) for (let j = 0; j < 3; j++) d[i + j] = d[i + j] & 0xF8;
+    sx.putImageData(im, 0, 0);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true; ctx.drawImage(s, 0, 0, w, h, 0, 0, c.width, c.height);
+  }
   // tilt-shift: a blurred copy of the frame, kept only above and below a sharp band through the middle
   function tiltShift(ctx, c) {
     const k = G.scale || 1, w = Math.ceil(c.width / 3), h = Math.ceil(c.height / 3);

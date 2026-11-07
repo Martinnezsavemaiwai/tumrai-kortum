@@ -79,8 +79,8 @@
     const title = S.PAGES[page][1];
     paper(ctx, `rig lab · ${title}`);
     if (page === 0) {
-      [['chibi', 'nok'], ['explainer', 'ton'], ['puppet', 'prince']].forEach(([body, who], i) => {
-        const x = 420 + i * 540;
+      [['chibi', 'nok'], ['explainer', 'ton'], ['brick', 'krit'], ['puppet', 'prince']].forEach(([body, who], i) => {
+        const x = 320 + i * 440;
         if (body === 'puppet') { ctx.save(); ctx.beginPath(); ctx.rect(x - 180, 90, 360, 940); ctx.clip(); R.screen(ctx, W, H); ctx.restore(); }
         fig(ctx, { x, y: 960, s: 0.82, body, who, ...R.POSES.idle });
         tag(ctx, `${body} · ${who}`, x, 1010);

@@ -4,7 +4,8 @@
 //   R.draw(ctx, { x, y, s: 1, body: 'chibi', who: R.CAST.mali, t, ...R.act(t, [[0, 'idle'], [2, 'wave']]) });
 //
 // Bodies: chibi (big head, but a neck, elbows and fingers; the default) · explainer (flat vector, soft shading) ·
-// puppet (หนังตะลุง: profile silhouette on a lit screen, perforated, rods to the hands). Feet at (x, y); s = 1 is 1000 px tall. Every body takes the same pose fields, so
+// puppet (หนังตะลุง: profile silhouette on a lit screen, perforated, rods to the hands) · brick (a toy brick figure:
+// cylinder head with a stud, printed face, trapezoid torso, block legs, C-shaped hands; pairs with STYLE 'bricks'). Feet at (x, y); s = 1 is 1000 px tall. Every body takes the same pose fields, so
 // poses, R.act and R.walk work for all of them, and every line goes through G.* so all drawing styles apply.
 //
 // Pose fields (radians unless noted): lSh/rSh shoulder (0 = arm hanging, + = out and up), lEl/rEl elbow
@@ -42,8 +43,10 @@
 
   // ---------- proportions (units: the figure is 1000 tall at s = 1) ----------
   const BODY = {
-    chibi: { head: [190, 175], neck: 30, torso: 230, sw: 88, ww: 78, hw: 74, ua: 120, fa: 110, hand: 52, thigh: 120, shin: 120, limb: 36, leg: 42, foot: 44 },
+    // eye: where the eyes sit, as a fraction of the head's half-height below its centre (default 0.2); direct.js frames on it
+    chibi: { eye: 0.12, head: [190, 175], neck: 30, torso: 230, sw: 88, ww: 78, hw: 74, ua: 120, fa: 110, hand: 52, thigh: 120, shin: 120, limb: 36, leg: 42, foot: 44 },
     explainer: { head: [108, 104], neck: 24, torso: 250, sw: 86, ww: 72, hw: 70, ua: 150, fa: 140, hand: 54, thigh: 170, shin: 165, limb: 36, leg: 42, foot: 46 },
+    brick: { eye: -0.05, head: [118, 100], neck: 26, torso: 290, sw: 96, ww: 130, hw: 148, ua: 125, fa: 115, hand: 46, thigh: 165, shin: 165, limb: 54, leg: 130, foot: 40 },
     puppet: { head: [70, 80], neck: 40, torso: 320, sw: 40, ww: 34, hw: 46, ua: 220, fa: 220, hand: 80, thigh: 230, shin: 220, limb: 22, leg: 26, foot: 60 },
   };
 
@@ -322,7 +325,7 @@
       ctx.fillStyle = 'rgba(110,50,70,0.1)'; ctx.beginPath(); ctx.ellipse(0, hy - hry * 0.34, hrx * 1.1, hry * 0.36, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
     // eyes, brows, nose, mouth
-    const ey = hy + hry * (body === 'chibi' ? 0.12 : 0.2), ex = hrx * (body === 'chibi' ? 0.42 : 0.38);
+    const ey = hy + hry * (B.eye ?? 0.2), ex = hrx * (body === 'chibi' ? 0.42 : 0.38);
     for (const d of [-1, 1]) {
       dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * (body === 'explainer' ? 0.12 : 0.17));
       if (c.glasses && body !== 'puppet') { const gr = hrx * 0.24; ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
@@ -366,6 +369,87 @@
         G.limb(ctx, [at(0.58), at(0.82)], { color: c.band, lw: B.limb * 1.15, seed: seed + 90 });
       }
       hand(ctx, wx, wy, a2, d, kind, B.hand, c.skin, body, seed + 80 + d * 7);
+    }
+    ctx.restore();
+  }
+
+  // ---------- brick: a toy brick figure, front view. Same pose fields as the others; hands are always the C-shaped grip,
+  // knees only shorten the leg a little (the toy's legs swing from the hip), hair is a moulded piece. ----------
+  function brick(ctx, o, c, B, seed) {
+    const p = { ...DEF, ...o };
+    const legLen = B.thigh + B.shin, hipY = -legLen - B.foot * 0.3, sy = hipY - B.torso, neckTop = sy - B.neck;
+    const [hrx, hry] = B.head, hy = neckTop - hry * 0.92, bob = p.bob, edge = (k) => shade(k, -0.22);
+    const rot = (pts, cx, cy, a) => pts.map(([x, y]) => [cx + (x - cx) * Math.cos(a) - (y - cy) * Math.sin(a), cy + (x - cx) * Math.sin(a) + (y - cy) * Math.cos(a)]);
+    const box = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    const legCol = c.bottom || '#3A4A6A';
+
+    // long hair hangs behind the shoulders
+    if (c.hair && c.hairStyle === 'long') { ctx.save(); ctx.translate(0, hipY + bob); ctx.rotate(p.lean); ctx.translate(0, -hipY); poly(ctx, box(-hrx * 1.12, hy - hry * 0.4, hrx * 1.12, sy + B.torso * 0.28), c.hair, seed + 1); ctx.restore(); }
+
+    // legs: blocks that swing from the hip pin; knees just shorten them a touch
+    for (const d of [-1, 1]) {
+      const hip = d < 0 ? p.lHip : p.rHip, knee = d < 0 ? p.lKnee : p.rKnee, px = d * B.hw * 0.5, py = hipY + 34 + bob;
+      const L = legLen - 34 - Math.abs(Math.sin(knee)) * 50 - B.foot * 0.3, w = B.leg * 0.5, a = -d * hip * 0.6;
+      poly(ctx, rot(box(px - w, py, px + w, py + L - B.foot), px, py, a), legCol, seed + 50 + d);
+      poly(ctx, rot(box(px - w * 1.08, py + L - B.foot, px + w * 1.08, py + L), px, py, a), c.shoes || edge(legCol), seed + 52 + d); // the foot
+    }
+
+    // upper body leans and bobs around the hips
+    ctx.save(); ctx.translate(0, hipY + bob); ctx.rotate(p.lean); ctx.translate(0, -hipY);
+    poly(ctx, box(-B.hw, hipY - 8, B.hw, hipY + 42), legCol, seed + 3); // the hip piece
+    if (c.bottomStyle === 'skirt' || c.bottomStyle === 'sarong') poly(ctx, [[-B.hw * 1.02, hipY - 8], [B.hw * 1.02, hipY - 8], [B.hw * 1.3, hipY + (c.bottomStyle === 'sarong' ? legLen * 0.8 : 150)], [-B.hw * 1.3, hipY + (c.bottomStyle === 'sarong' ? legLen * 0.8 : 150)]], c.bottom, seed + 4); // a sloped skirt piece
+    const torso = [[-B.sw, sy], [B.sw, sy], [B.hw, hipY], [-B.hw, hipY]];
+    poly(ctx, torso, c.top || '#6A8AB0', seed + 2);
+    soft(ctx, torso, c.top, 0.2);
+    // the print on the torso
+    if (c.jacket) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.3, sy + 2], [d * B.sw * 0.98, sy + 2], [d * B.hw * 0.98, hipY - 2], [d * B.hw * 0.32, hipY - 2]], c.jacket, seed + 5 + d);
+    if (c.vest) for (const d of [-1, 1]) poly(ctx, [[d * B.sw * 0.25, sy + 2], [d * B.sw * 0.9, sy + 4], [d * B.hw * 0.9, hipY - 2], [d * B.hw * 0.3, hipY - 2]], c.vest, seed + 38 + d);
+    if (c.collar) for (const d of [-1, 1]) poly(ctx, [[0, sy + 44], [d * B.sw * 0.55, sy + 2], [d * B.sw * 0.7, sy + 40], [d * 8, sy + 58]], c.collar, seed + 6 + d);
+    if (c.tie) poly(ctx, [[-12, sy + 46], [12, sy + 46], [18, sy + 110], [0, sy + 126], [-18, sy + 110]], c.tie, seed + 7);
+    if (c.bow) for (const d of [-1, 1]) poly(ctx, [[0, sy + 34], [d * 36, sy + 18], [d * 36, sy + 54]], c.bow, seed + 40 + d, { lw: 3 });
+    if (c.mark) { ctx.save(); ctx.fillStyle = c.markColor || '#2E3F8A'; ctx.font = '700 ' + Math.round(B.sw * 0.32) + 'px Kanit'; ctx.textAlign = 'center'; ctx.fillText(c.mark, B.sw * 0.55, sy + B.torso * 0.3); ctx.restore(); }
+    sh(ctx, G.rrPts(-36, neckTop - 6, 72, B.neck + 14, 8), shade(c.skin, -0.12), seed + 8, { lw: 3 }); // the neck peg
+
+    // head: a cylinder with a stud, the face printed on it; hair is a separate moulded piece on top
+    ctx.save(); ctx.translate(0, neckTop); ctx.rotate(p.tilt); ctx.translate(0, -neckTop);
+    if (!c.hair || c.hairStyle === 'bald' || c.hairStyle === 'buzz') sh(ctx, G.rrPts(-hrx * 0.5, hy - hry - 34, hrx, 44, 10), c.skin, seed + 9); // the stud
+    const head = G.rrPts(-hrx, hy - hry, hrx * 2, hry * 2, hrx * 0.38);
+    sh(ctx, head, c.skin, seed + 11); soft(ctx, head, c.skin, 0.2);
+    const ey = hy + hry * B.eye, ex = hrx * 0.36;
+    for (const d of [-1, 1]) {
+      dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * 0.11);
+      if (c.glasses) G.line(ctx, G.ellPts(d * ex, ey, hrx * 0.22, hrx * 0.22).concat([G.ellPts(d * ex, ey, hrx * 0.22, hrx * 0.22)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 });
+    }
+    if (c.glasses) G.line(ctx, [[-ex + hrx * 0.22, ey - 4], [ex - hrx * 0.22, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 });
+    mouth(ctx, 0, ey + hry * 0.5, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.26 : 0.2), p, seed + 34, c);
+    if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.25, ey + 12], [d * ex * 1.55, ey + 4]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
+    if (c.mustache) for (const d of [-1, 1]) G.line(ctx, [[d * 4, ey + hry * 0.36], [d * hrx * 0.18, ey + hry * 0.42], [d * hrx * 0.3, ey + hry * 0.32]], { color: c.hair || INK, lw: 8, seed: seed + 38 + d });
+    if (c.hair && c.hairStyle !== 'bald') {
+      const H0 = hy - hry * 1.28, fr = hy - hry * 0.42; // crown top, fringe line
+      if (c.hairStyle === 'buzz') sh(ctx, [[-hrx * 1.02, hy - hry * 0.3], [-hrx * 0.95, hy - hry * 1.02], [hrx * 0.95, hy - hry * 1.02], [hrx * 1.02, hy - hry * 0.3]], shade(c.hair, 0.25), seed + 41, { lw: 2 });
+      else {
+        const side = c.hairStyle === 'long' || c.hairStyle === 'bob' ? hy + hry * 0.55 : hy + hry * 0.05;
+        const cap = [[-hrx * 1.14, side], [-hrx * 1.18, hy - hry * 0.75], [-hrx * 0.82, H0], [hrx * 0.82, H0], [hrx * 1.18, hy - hry * 0.75], [hrx * 1.14, side], [hrx * 0.94, side], [hrx * 0.9, fr], [-hrx * 0.2, fr + hry * 0.1], [-hrx * 0.9, fr], [-hrx * 0.94, side]];
+        poly(ctx, cap, c.hair, seed + 42);
+        if (c.hairStyle === 'spiky') for (let k = 0; k < 5; k++) { const x = -hrx * 0.8 + k * hrx * 0.4; poly(ctx, [[x - 26, H0 + 8], [x + 4, H0 - 46], [x + 26, H0 + 8]], c.hair, seed + 44 + k); }
+        if (c.hairStyle === 'twintail' || c.hairStyle === 'ponytail') for (const d of c.hairStyle === 'twintail' ? [-1, 1] : [1]) ell(ctx, d * hrx * 1.3, hy - hry * 0.3, hrx * 0.28, hry * 0.6, c.hair, seed + 46 + d);
+        ctx.save(); ctx.globalAlpha = 0.3; G.line(ctx, [[-hrx * 0.6, H0 + 26], [0, H0 + 14], [hrx * 0.5, H0 + 24]], { color: shade(c.hair, 0.7), lw: 10, seed: seed + 48 }); ctx.restore(); // moulded shine
+      }
+    }
+    marks(ctx, 0, hy, hrx, p.fx, p.t || 0, seed + 60);
+    ctx.restore();
+
+    // arms: sleeve all the way, a wrist peg, the C-shaped grip
+    for (const d of [-1, 1]) {
+      let a = d < 0 ? p.lSh : p.rSh, el = d < 0 ? p.lEl : p.rEl;
+      const tgt = d < 0 ? p.reachL : p.reachR, x0 = d * B.sw * 0.98, y0 = sy + 34;
+      if (tgt && p.world && ctx.getTransform) { const q = ctx.getTransform().inverse().multiply(p.world).transformPoint({ x: tgt[0], y: tgt[1] }); [a, el] = ik(x0, y0, q.x, q.y, d, B.ua, B.fa); }
+      const exl = x0 + d * Math.sin(a) * B.ua, eyl = y0 + Math.cos(a) * B.ua, a2 = a + el, ux = d * Math.sin(a2), uy = Math.cos(a2);
+      const wx = exl + ux * B.fa, wy = eyl + uy * B.fa;
+      G.limb(ctx, [[x0, y0], [exl, eyl], [wx, wy]], { color: c.sleeveless ? c.skin : c.top || c.skin, lw: B.limb, seed: seed + 74 + d });
+      G.limb(ctx, [[wx, wy], [wx + ux * 16, wy + uy * 16]], { color: c.skin, lw: B.limb * 0.5, seed: seed + 76 + d }); // the wrist peg
+      const r = B.hand * 0.62, hx = wx + ux * (16 + r), hyy = wy + uy * (16 + r), ang = Math.atan2(uy, ux), gap = 0.95, n = 10;
+      G.limb(ctx, Array.from({ length: n + 1 }, (_, i) => { const t = ang + gap + (i / n) * (Math.PI * 2 - gap * 2); return [hx + Math.cos(t) * r, hyy + Math.sin(t) * r]; }), { color: c.skin, lw: B.hand * 0.5, seed: seed + 80 + d }); // open toward the forearm's direction
     }
     ctx.restore();
   }
@@ -447,9 +531,9 @@
       const hry = B.head[1], hy = -(B.thigh + B.shin) - B.foot * 0.3 - B.torso - B.neck - hry * 0.92, m = ctx.getTransform();
       const P = (y) => { const q = m.transformPoint({ x: 0, y }); return [q.x, q.y]; };
       globalThis.R.faces.push({ who: typeof o.who === 'string' ? o.who : null, name: c.name || null, look: { ...c, body }, alpha: ctx.globalAlpha,
-        eye: P(hy + hry * (body === 'chibi' ? 0.12 : 0.2)), chin: P(hy + hry), top: P(hy - hry * 1.12) });
+        eye: P(hy + hry * (B.eye ?? 0.2)), chin: P(hy + hry), top: P(hy - hry * 1.12) });
     }
-    if (body === 'puppet') puppet(ctx, o, c, B, seed); else front(ctx, o, c, B, body, seed);
+    if (body === 'puppet') puppet(ctx, o, c, B, seed); else if (body === 'brick') brick(ctx, o, c, B, seed); else front(ctx, o, c, B, body, seed);
     ctx.restore();
   }
 
