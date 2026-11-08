@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>avatar</title>
+<!-- Channel profile picture options (TikTok / YouTube / FB / IG all crop to a circle).
+     avatar.html?head=colors|bodies|styles|hair|glasses|bgs|final|emotions -> head-only sheets of the blonde guy (add &v=N for one at 1080)
+     avatar.html?v=3  -> option 3 at 1080×1080      avatar.html?set=1 / ?set=2 (no v) -> sheet of options 12–23 / 24–29 as circles, big + phone size
+     chrome --headless --screenshot=out/avatar/v3.png --window-size=1080,1080 --hide-scrollbars "file:///…/avatar.html?v=3" -->
+<style>html, body { margin: 0; overflow: hidden; background: #fff; } canvas { display: block; }</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script src="engine/util.js"></script>
+<script src="engine/video/gfx.js"></script>
+<script src="engine/video/chars.js"></script>
+<script src="kit/art.js"></script>
+<script src="kit/rig.js"></script>
+<script>
+  const S = 1080, M = S / 2;
+  // one row per option: drawing style, body, hair, pose, two background colours, shirt colour
+  const V = [
+    ['flat', 'chibi', 'spiky', 'cheer', '#FFC93C', '#FFB020', '#FF7A3C'],
+    ['paper', 'chibi', 'curly', 'wave', '#8FD3F4', '#6BC1EC', '#F25C78'],
+    ['crayon', 'chibi', 'bun', 'peace', '#B8E986', '#9AD964', '#FF8A3C'],
+    ['comic', 'explainer', 'twoblock', 'thumbsup', '#FF8FA8', '#FF7090', '#2E7DD7'],
+    ['manga', 'explainer', 'ponytail', 'wave', '#F4F1EA', '#E4DED2', '#2A2A3A'],
+    ['riso', 'round', 'buzz', 'cheer', '#FFE45C', '#FFD23C', '#3FA89B'],
+    ['papercut', 'round', 'bangs', 'happy', '#A8E6CF', '#86D9B8', '#F28AA8'],
+    ['retro', 'heroic', 'swept', 'thumbsup', '#FFB88C', '#FF9E6A', '#3A4A8A'],
+    ['clay', 'chibi', 'twintail', 'cheer', '#C9B8FF', '#B29CFF', '#FFC93C'],
+    ['lowpoly', 'heroic', 'comma', 'peace', '#7FD8FF', '#5AC8F5', '#FF7A3C'],
+    ['pixelart', 'brick', 'short', 'wave', '#FFD166', '#FFBE3C', '#E84855'],
+    ['early3d', 'round', 'braids', 'happy', '#FFA8D8', '#FF8CC8', '#5A8AF2'],
+    // set 2 (?set=1): last column = where the cat is — side (default), head (on the mascot's head), hug (held in front)
+    ['flat', 'round', 'tuft', 'happy', '#FF9F68', '#FF8550', '#FFE45C', 'hug'],
+    ['woodcut', 'chibi', 'long', 'wave', '#F2E2C4', '#E6D0A8', '#C83C4A'],
+    ['diorama', 'chibi', 'sidepart', 'thumbsup', '#9FE2BF', '#7FD4A8', '#F2B33C', 'head'],
+    ['comic', 'round', 'curly', 'cheer', '#6FD6FF', '#45C4F5', '#FF5A5F'],
+    ['crayon', 'explainer', 'bob', 'happy', '#FFE8A3', '#FFD978', '#7A5AE0', 'hug'],
+    ['retro', 'chibi', 'ponytail', 'peace', '#FFC2D1', '#FFA8BE', '#2EC4B6'],
+    ['papercut', 'explainer', 'spiky', 'cheer', '#C7F464', '#ADE84A', '#FF6B6B', 'head'],
+    ['clay', 'round', 'bun', 'wave', '#FFD3A5', '#FFBE85', '#4D96FF'],
+    ['riso', 'chibi', 'swept', 'happy', '#B5EAEA', '#93DEDE', '#5A4AE0', 'hug'],
+    ['manga', 'chibi', 'twintail', 'peace', '#FFFFFF', '#EFEFEF', '#E84855'],
+    ['lowpoly', 'round', 'short', 'cheer', '#FFCF56', '#FFBA2E', '#6A4C93', 'head'],
+    ['pixelart', 'chibi', 'curly', 'thumbsup', '#A0E7E5', '#7FDCD9', '#FF7A3C'],
+    // set 3 (?set=2): the guy in glasses with blonde-highlighted comma hair, an orange tabby on his shoulder
+    // cat: perch (sits on the shoulder), drape (lies over it, paws hanging), peek (looks up from behind it)
+    ['pixelart', 'explainer', 'comma', 'thumbsup', '#8FD3F4', '#6BC1EC', '#2E7DD7', 'perch', 0],
+    ['pixelart', 'explainer', 'comma', 'peace', '#B8E986', '#9AD964', '#3A4A8A', 'drape', 0],
+    ['pixelart', 'explainer', 'comma', 'thumbsup', '#FFC2D1', '#FFA8BE', '#2EC4B6', 'peek', 0],
+    ['pixelart', 'explainer', 'comma', 'thumbsup', '#C9B8FF', '#B29CFF', '#F4F1EA', 'drape', 1],
+    ['pixelart', 'explainer', 'comma', 'peace', '#FFE45C', '#FFD23C', '#5A4AE0', 'perch', 1],
+    ['pixelart', 'explainer', 'comma', 'thumbsup', '#A0E7E5', '#7FDCD9', '#E84855', 'peek', 1],
+  ];
+  // the guy, two looks: dark brown hair + honey-blonde streaks + black frames / near-black hair + pale blonde + red frames
+  const GUY = [
+    { skin: '#F2CDB0', hair: '#3A2A22', highlight: '#E8C060', glasses: '#1C1620', eye: '#3A2A20' },
+    { skin: '#E8BE9C', hair: '#221A20', highlight: '#FFE08A', glasses: '#C83C4A', eye: '#3A2A20' },
+  ];
+
+  // ---------- an orange (mackerel) tabby: forehead M, cheek stripes, eyeliner, pink nose, nose freckles, cream muzzle ----------
+  const TB = { fur: '#F0892E', dark: '#B5501C', cream: '#FFE3BF', pink: '#F29A9A', eye: '#A8C83A', ink: '#1C1620' };
+  const dot = (ctx, x, y, r, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
+  function tabbyHead(ctx, x, y, k, seed, tilt = 0) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.scale(k, k);
+    for (const d of [-1, 1]) {
+      G.poly(ctx, [[d * 55, -50], [d * 84, -120], [d * 16, -80]], { fill: TB.fur, lw: 5, seed: seed + d, step: 12 });
+      G.poly(ctx, [[d * 54, -62], [d * 74, -104], [d * 32, -80]], { fill: TB.pink, lw: 0, seed: seed + 3 + d, step: 10 });
+    }
+    G.ellipse(ctx, 0, 0, 100, 84, { fill: TB.fur, lw: 5, seed: seed + 5 });
+    G.line(ctx, [[-36, -28], [-22, -70], [0, -38], [22, -70], [36, -28]], { color: TB.dark, lw: 8, seed: seed + 6 }); // the tabby M
+    for (const d of [-1, 1]) for (const j of [0, 1]) G.line(ctx, [[d * 72, 2 + j * 24], [d * 99, -4 + j * 30]], { color: TB.dark, lw: 7, seed: seed + 7 + j + d });
+    for (const d of [-1, 1]) G.ellipse(ctx, d * 20, 36, 27, 21, { fill: TB.cream, lw: 0, seed: seed + 10 + d });
+    for (const d of [-1, 1]) { G.ellipse(ctx, d * 40, -4, 21, 23, { fill: TB.eye, lw: 6, seed: seed + 12 + d }); dot(ctx, d * 40, -1, 12, TB.ink); dot(ctx, d * 40 - 7, -10, 5, '#FFFFFF'); }
+    G.poly(ctx, [[-12, 18], [12, 18], [0, 31]], { fill: TB.pink, lw: 3, seed: seed + 15, step: 6 });
+    [[-30, 40], [-22, 49], [28, 45]].forEach(([fx, fy]) => dot(ctx, fx, fy, 3, TB.dark)); // freckles: common on orange cats
+    G.line(ctx, [[-17, 42], [-8, 49], [0, 40], [8, 49], [17, 42]], { lw: 4, seed: seed + 16 });
+    for (const d of [-1, 1]) for (const j of [0, 1]) G.line(ctx, [[d * 44, 34 + j * 10], [d * 122, 22 + j * 26]], { color: 'rgba(40,30,30,0.55)', lw: 2.5, seed: seed + 18 + j + d });
+    ctx.restore();
+  }
+  const paws = (ctx, pts, k, seed) => pts.forEach(([px, py], j) => { G.ellipse(ctx, px, py, 26 * k, 20 * k, { fill: TB.cream, lw: 5, seed: seed + 30 + j }); for (const u of [-1, 1]) G.line(ctx, [[px + u * 8 * k, py + 4 * k], [px + u * 8 * k, py + 16 * k]], { lw: 3, seed: seed + 34 + j + u }); });
+  const tail = (ctx, pts, k, seed) => G.line(ctx, pts, { color: TB.fur, lw: 30 * k, seed: seed + 40, step: 10 });
+  // behind(): drawn before the guy; front(): after. (sx, sy) = the screen-left shoulder
+  function tabby(ctx, pose, sx, sy, k, seed) {
+    if (pose === 'perch') return {
+      behind() { tail(ctx, [[sx + 40 * k, sy + 10], [sx + 10 * k, sy + 120 * k], [sx - 40 * k, sy + 190 * k]], k, seed); },
+      front() {
+        G.ellipse(ctx, sx - 10 * k, sy - 70 * k, 78 * k, 92 * k, { fill: TB.fur, lw: 5, seed: seed + 50 });
+        for (const j of [0, 1, 2]) G.line(ctx, [[sx - 82 * k, sy - (100 - j * 34) * k], [sx - 50 * k, sy - (92 - j * 34) * k]], { color: TB.dark, lw: 8 * k, seed: seed + 52 + j });
+        G.ellipse(ctx, sx + 4 * k, sy - 50 * k, 40 * k, 55 * k, { fill: TB.cream, lw: 0, seed: seed + 51 });
+        paws(ctx, [[sx - 26 * k, sy + 8 * k], [sx + 22 * k, sy + 8 * k]], k, seed);
+        tabbyHead(ctx, sx - 6 * k, sy - 190 * k, k, seed, 0.12);
+      } };
+    if (pose === 'drape') return {
+      behind() { tail(ctx, [[sx - 120 * k, sy - 10], [sx - 170 * k, sy + 60 * k], [sx - 150 * k, sy + 160 * k]], k, seed); },
+      front() {
+        G.ellipse(ctx, sx - 60 * k, sy - 30 * k, 135 * k, 62 * k, { fill: TB.fur, lw: 5, seed: seed + 50 });
+        for (const j of [0, 1, 2]) G.line(ctx, [[sx - (150 - j * 50) * k, sy - 88 * k], [sx - (130 - j * 50) * k, sy - 40 * k]], { color: TB.dark, lw: 9 * k, seed: seed + 52 + j });
+        paws(ctx, [[sx - 10 * k, sy + 60 * k], [sx + 40 * k, sy + 48 * k]], k, seed); // dangling over the chest
+        tabbyHead(ctx, sx + 40 * k, sy - 70 * k, k * 0.95, seed, -0.25);
+      } };
+    return { // peek: head up from behind the shoulder, paws hooked over it
+      behind() { tabbyHead(ctx, sx - 20 * k, sy - 70 * k, k, seed, 0.2); },
+      front() { paws(ctx, [[sx - 60 * k, sy - 4 * k], [sx + 6 * k, sy - 16 * k]], k, seed); } };
+  }
+
+  // where the face lands for a body at s = 1, feet at y = 0 (R.faces is the rig's own QA hook)
+  function faceOf(body, who) {
+    const t = document.createElement('canvas'); t.width = t.height = 8;
+    R.faces = []; R.draw(t.getContext('2d'), { x: 0, y: 0, s: 1, body, who, t: 0 }); const f = R.faces[0]; R.faces = null;
+    return { top: f.top[1], chin: f.chin[1] };
+  }
+
+  function draw(ctx, [style, body, hair, pose, bg1, bg2, shirt, cat = 'side', guy], i) {
+    G.setStyle(style);
+    ctx.save();
+    // sunburst behind the face
+    const cy = 450;
+    ctx.fillStyle = bg1; ctx.fillRect(0, 0, S, S);
+    ctx.fillStyle = bg2;
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(M, cy); ctx.arc(M, cy, S, a, a + Math.PI / 16); ctx.closePath(); ctx.fill(); }
+    const g = ctx.createRadialGradient(M, cy, 60, M, cy, 480);
+    g.addColorStop(0, 'rgba(255,255,245,0.8)'); g.addColorStop(1, 'rgba(255,255,245,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+
+    // the mascot, scaled so every body's head is the same size in the circle
+    const who = { name: 'ทำ', skin: i % 3 === 2 ? '#E2B28E' : '#F6D2B4', hair: i % 4 === 3 ? '#6A3A2A' : '#2A1E2E', hairStyle: hair, eye: '#3A2A20', top: shirt, bottom: '#2E4A7A', bottomStyle: 'shorts', shoes: '#F2F2F2', ...(guy !== undefined ? { ...GUY[guy], bottomStyle: 'pants' } : {}) };
+    const f = faceOf(body, who), s = 470 / (f.chin - f.top), headMid = (f.top + f.chin) / 2;
+    const P = { ...R.act(0, [[0, pose]], { alive: false }), eyes: 'happy', mouth: 'open', talk: 0.9, fx: ['blush', 'sparkle'], tilt: 0.08 };
+    // a pose that raises the right (screen-right) arm puts the cat on the left so it never covers the hand
+    const side = cat !== 'side' ? 0 : ['wave', 'peace', 'thumbsup'].includes(pose) ? -1 : 1;
+    if (guy !== undefined) { // shoulder cat on the screen-left shoulder; the raised hand stays free on the right
+      const cx = M + 110, chin = 440 + (f.chin - headMid) * s, T = tabby(ctx, cat, cx - R.BODY[body].sw * s * 0.95, chin + R.BODY[body].neck * s + 14, 1.4, 900 + i);
+      T.behind(); R.draw(ctx, { x: cx, y: 440 - headMid * s, s, body, who, t: 0, shadow: false, ...P, fx: [] }); T.front();
+      ctx.restore(); G.grade(ctx); return;
+    }
+    R.draw(ctx, { x: M - 40 * side, y: 440 - headMid * s, s, body, who, t: 0, shadow: false, ...P });
+
+    // the orange cat: beside the mascot looking up, sitting on its head, or held in front
+    const cat0 = { color: '#F28A2E', t: 0.6, happy: 1, shadow: false, seed: 740 + i };
+    if (cat === 'head') Ch.cat(ctx, { ...cat0, x: M + 10, y: 440 - 235 + 70, s: 1.6, look: 0 });
+    else if (cat === 'hug') Ch.cat(ctx, { ...cat0, x: M, y: 1170, s: 2.3, look: 0, meow: 0.6 });
+    else Ch.cat(ctx, { ...cat0, x: M + 290 * side, y: 1150, s: 2.5, look: -side });
+    ctx.restore();
+    G.grade(ctx); // ponytail: no G.post (paper/grain textures need boot.js); add it if paper style needs its texture
+  }
+
+  // ---------- head-only: the guy in glasses whose blonde hair is the trademark (no cat) ----------
+  // ?head=colors|bodies|styles|hair -> sheet · add &v=N for that option alone at 1080×1080
+  const BLONDE = [ // hair (roots) → hair2 (tips)
+    ['#B8862E', '#FFF0B0', 'honey → platinum'],
+    ['#7A5A30', '#F6E3A6', 'dark root → butter'],
+    ['#E0A830', '#FFFBEA', 'gold → white'],
+    ['#A08E6E', '#EFEADF', 'ash → silver'],
+  ];
+  // 2026 men's cuts (barber blogs + Thai lists) as rig styles: comma / curtain, two block + taper, old-money side part,
+  // textured quiff, perm, textured crop, messy crop, spiky
+  const CUTS = [['comma', 'comma (curtain)'], ['twoblock', 'two block + taper'], ['sidepart', 'old money side part'], ['swept', 'textured quiff'],
+    ['curly', 'perm'], ['short', 'textured crop'], ['tuft', 'messy crop'], ['spiky', 'spiky']];
+  const BGS = [['#6BC1EC', '#8FD3F4'], ['#5AB8B4', '#7FDCD9'], ['#9C86F2', '#B29CFF'], ['#4A7AD8', '#6E98EA'], ['#E86A8A', '#FF8CA8'], ['#3A4A6A', '#526488']];
+  const base = { style: 'flat', body: 'explainer', hair: 'comma', color: 0 };
+  const HEAD = {
+    colors: BLONDE.map((b, k) => ({ ...base, color: k, label: b[2] })),
+    bodies: R.BODIES.map((b) => ({ ...base, body: b, label: b })),
+    styles: Object.keys(G.STYLES).map((st) => ({ ...base, style: st, label: st })),
+    hair: CUTS.map(([h, l]) => ({ ...base, hair: h, label: l })),
+  };
+  // the chosen look: two block + taper, round body, chalk; head only (no neck or body)
+  const PICK = { style: 'chalk', body: 'round', hair: 'twoblock', color: 0, headOnly: true, glasses: 'rect', bg: 'board' };
+  HEAD.glasses = ['rect', 'square', 'browline', 'hex', 'aviator', 'round'].map((g) => ({ ...PICK, glasses: g, label: g + ' glasses' }));
+  HEAD.bgs = ['board', 'night', 'blueprint', 'halo', 'split', 'burst'].map((b) => ({ ...PICK, bg: b, label: b }));
+  HEAD.final = [{ ...PICK, glasses: 'browline', bg: 'night', label: 'final: browline + night' }]; // the chosen profile picture
+  // the same face with other feelings: rig eyes / mouth / fx (+ look, tilt), drawn over the chosen look
+  const FEEL = [
+    ['ยิ้ม smile', {}], ['หัวเราะ laugh', { mouth: 'open', talk: 0.8, fx: ['blush'] }], ['ยิ้มกว้าง grin', { eyes: 'normal', mouth: 'grin', fx: ['sparkle'] }],
+    ['มั่นใจ smug', { eyes: 'sly', mouth: 'smirk', tilt: 0.14 }], ['ตื่นเต้น excited', { mouth: 'open', talk: 1, fx: ['sparkle', 'blush'] }], ['สงสัย thinking', { eyes: 'normal', look: 0.6, lookY: -0.7, mouth: 'smirk', tilt: -0.1 }],
+    ['ตกใจ surprised', { eyes: 'shock', mouth: 'o', fx: ['sweat'] }], ['กรี๊ด scared', { eyes: 'shock', mouth: 'scream', fx: ['sweat'] }], ['เหงื่อตก nervous', { eyes: 'normal', mouth: 'wavy', fx: ['sweat'] }],
+    ['เศร้า sad', { eyes: 'sad', mouth: 'frown', fx: ['tears'] }], ['โกรธ angry', { eyes: 'angry', mouth: 'frown', fx: ['anger'] }], ['ง่วง sleepy', { eyes: 'closed', mouth: 'wavy', tilt: 0.18 }],
+  ];
+  HEAD.emotions = FEEL.map(([label, face]) => ({ ...HEAD.final[0], face: { mouthSize: 1.8, ...face }, label })); // bigger mouths so the feeling reads at phone size
+
+  // ---------- chalk doodles (through G.* so the chalk style roughens them) ----------
+  const CH = '#F4F0E4';
+  const star5 = (ctx, x, y, r, col, seed) => G.line(ctx, [0, 1, 2, 3, 4, 5].map((k) => { const a = -Math.PI / 2 + k * Math.PI * 4 / 5; return [x + Math.cos(a) * r, y + Math.sin(a) * r]; }), { color: col, lw: 6, seed });
+  const sparkle = (ctx, x, y, r, col, seed) => { G.line(ctx, [[x, y - r], [x, y + r]], { color: col, lw: 6, seed }); G.line(ctx, [[x - r, y], [x + r, y]], { color: col, lw: 6, seed: seed + 1 }); };
+  const swirl = (ctx, x, y, r, col, seed) => G.line(ctx, Array.from({ length: 40 }, (_, k) => { const a = k * 0.42, rr = r * k / 40; return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; }), { color: col, lw: 5, seed });
+  const ring = (ctx, x, y, r, col, lw, seed) => { const pts = G.ellPts(x, y, r, r); G.line(ctx, pts.concat([pts[0]]), { color: col, lw, seed }); };
+  // doodle spots around the rim of the circle, away from the face
+  const RIM = [[-0.62, -0.5], [0.6, -0.55], [-0.78, 0.05], [0.8, 0.0], [-0.55, 0.62], [0.58, 0.6], [0, -0.85]].map(([u, v]) => [M + u * 470, 540 + v * 470]);
+  function background(ctx, kind) {
+    const fill = (c) => { ctx.fillStyle = c; ctx.fillRect(0, 0, S, S); };
+    if (kind === 'board') { // ห้องเรียน: a green chalkboard with eraser smudges and doodles
+      fill('#2E4A3C');
+      for (let k = 0; k < 5; k++) { ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.beginPath(); ctx.ellipse(160 + k * 200, 200 + (k % 2) * 620, 220, 70, -0.3, 0, Math.PI * 2); ctx.fill(); }
+      [star5, sparkle, swirl, sparkle, star5, swirl, sparkle].forEach((f, k) => f(ctx, ...RIM[k], k === 6 ? 30 : 44, CH, 500 + k * 7));
+    } else if (kind === 'night') { // กลางคืน: navy sky, chalk stars and a crescent moon
+      fill('#1C2744');
+      for (let k = 0; k < 40; k++) { const x = U.hash(k, 1) * S, y = U.hash(k, 2) * S; if (Math.hypot(x - M, y - 540) > 360) { ctx.fillStyle = 'rgba(244,240,228,0.7)'; ctx.beginPath(); ctx.arc(x, y, 2 + U.hash(k, 3) * 4, 0, Math.PI * 2); ctx.fill(); } }
+      ctx.fillStyle = '#F2D98A'; ctx.beginPath(); ctx.arc(860, 250, 70, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#1C2744'; ctx.beginPath(); ctx.arc(890, 225, 62, 0, Math.PI * 2); ctx.fill();
+      [RIM[0], RIM[2], RIM[4], RIM[5]].forEach((p, k) => sparkle(ctx, ...p, 30, CH, 600 + k * 5));
+    } else if (kind === 'blueprint') { // พิมพ์เขียว: blue paper, a chalk grid, a lightbulb idea doodle
+      fill('#2A5C9A');
+      ctx.strokeStyle = 'rgba(244,240,228,0.18)'; ctx.lineWidth = 3;
+      for (let k = 0; k <= S; k += 90) { ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k, S); ctx.moveTo(0, k); ctx.lineTo(S, k); ctx.stroke(); }
+      const [bx, by] = RIM[1]; ring(ctx, bx, by, 46, CH, 6, 700); G.line(ctx, [[bx - 22, by + 46], [bx - 18, by + 80], [bx + 18, by + 80], [bx + 22, by + 46]], { color: CH, lw: 6, seed: 701 });
+      for (let k = 0; k < 5; k++) { const a = -Math.PI * (0.15 + k * 0.175); G.line(ctx, [[bx + Math.cos(a) * 64, by + Math.sin(a) * 64], [bx + Math.cos(a) * 92, by + Math.sin(a) * 92]], { color: '#F2D98A', lw: 6, seed: 702 + k }); }
+      [RIM[0], RIM[3], RIM[4]].forEach((p, k) => (k === 1 ? swirl : star5)(ctx, ...p, 40, CH, 710 + k * 5));
+    } else if (kind === 'halo') { // a soft teal glow and chalk rings round the head
+      const g = ctx.createRadialGradient(M, 520, 80, M, 520, 640); g.addColorStop(0, '#7FD6CF'); g.addColorStop(1, '#22706A'); ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+      ring(ctx, M, 520, 400, CH, 7, 800); ring(ctx, M, 520, 450, 'rgba(244,240,228,0.5)', 5, 801);
+      [RIM[0], RIM[1], RIM[6]].forEach((p, k) => sparkle(ctx, ...p, 34, CH, 810 + k * 5));
+    } else if (kind === 'split') { // two colours cut on a slant, chalk confetti
+      fill('#2B8C8A'); ctx.fillStyle = '#E8735A'; ctx.beginPath(); ctx.moveTo(0, 720); ctx.lineTo(S, 360); ctx.lineTo(S, S); ctx.lineTo(0, S); ctx.closePath(); ctx.fill();
+      for (let k = 0; k < 24; k++) { const x = U.hash(k, 7) * S, y = U.hash(k, 8) * S; if (Math.hypot(x - M, y - 540) > 380) G.line(ctx, [[x, y], [x + 18, y - 10]], { color: CH, lw: 7, seed: 900 + k }); }
+    } else { // burst: deep purple with chalk rays
+      fill('#3E2A6E');
+      for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; G.line(ctx, [[M + Math.cos(a) * 400, 540 + Math.sin(a) * 400], [M + Math.cos(a) * 560, 540 + Math.sin(a) * 560]], { color: k % 2 ? '#F2D98A' : CH, lw: 8, seed: 950 + k }); }
+    }
+  }
+  function sunburst(ctx, c1, c2, cy) {
+    ctx.fillStyle = c1; ctx.fillRect(0, 0, S, S); ctx.fillStyle = c2;
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(M, cy); ctx.arc(M, cy, S, a, a + Math.PI / 16); ctx.closePath(); ctx.fill(); }
+  }
+  function drawHead(ctx, o, i) {
+    G.setStyle(o.style);
+    ctx.save();
+    if (o.bg) background(ctx, o.bg); else sunburst(ctx, ...BGS[i % BGS.length], 520); // cool backgrounds so the gold reads
+    const [h1, h2] = BLONDE[o.color];
+    const who = { name: 'ทำ', skin: '#F2CDB0', hair: h1, hair2: h2, hairStyle: o.hair, eye: '#3A2A20', glasses: '#1C1620', ...(o.glasses ? { glassesStyle: o.glasses } : {}), top: '#2E3A5A', collar: '#F4F1EA', bottom: '#2B2E3A', bottomStyle: 'pants', shoes: '#F2F2F2' };
+    const f = faceOf(o.body, who), s = (o.headOnly ? 540 : 600) / (f.chin - f.top), mid = (f.top + f.chin) / 2;
+    // head only: everything above the head's middle, and below it only the jaw's half-ellipse (no neck, shoulders or body)
+    const jaw = o.headOnly && [M, 540, R.BODY[o.body].head[0] * s * 1.1, (f.chin - mid) * s - 22]; // the cut under the face
+    if (jaw) { ctx.beginPath(); ctx.rect(0, 0, S, jaw[1]); ctx.ellipse(...jaw, 0, 0, Math.PI); ctx.clip(); }
+    R.draw(ctx, { x: M, y: 540 - mid * s, s, body: o.body, who, t: 0, shadow: false, ...R.act(0, [[0, 'idle']], { alive: false }), eyes: 'happy', mouth: 'smile', tilt: 0.06, ...(o.face || {}) });
+    ctx.restore();
+    // redraw the jaw outline the clip cut off, as a chalk line inside the face edge
+    if (jaw) { const [x, y, rx, ry] = jaw, k0 = 0.3; G.line(ctx, Array.from({ length: 25 }, (_, k) => { const a = Math.PI * (k0 + (1 - 2 * k0) * k / 24); return [x + Math.cos(a) * rx / 1.1, y + Math.sin(a) * ry]; }), { color: '#F2EEE3', lw: 6, seed: 77 }); }
+    G.grade(ctx);
+  }
+
+  const q = new URLSearchParams(location.search), v = q.get('v'), set = +(q.get('set') || 0), head = q.get('head');
+  const c = document.getElementById('c');
+  // head mode or the older full-body sets (V rows)
+  const items = head ? HEAD[head].map((o, k) => ({ draw: (ctx) => drawHead(ctx, o, k), label: `${k}  ${o.label}` }))
+    : V.map((row, k) => ({ draw: (ctx) => draw(ctx, row, k), label: `${k}  ${row[0]} · ${row[1]} · ${row[2]}${row[7] ? ' · cat ' + row[7] : ''}` }));
+  if (v !== null) items[+v].draw(c.getContext('2d'));
+  else {
+    // sheet: each option as the platform shows it — a 300 px circle and a 96 px phone-size circle
+    const rows = head ? items : items.slice(set * 12, set * 12 + 12), cols = 4, cw = 420, ch = 420, W = cols * cw, H = Math.ceil(rows.length / cols) * ch;
+    c.width = W; c.height = H;
+    const x = c.getContext('2d'), one = document.createElement('canvas'); one.width = one.height = S;
+    x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+    rows.forEach((it, j) => {
+      it.draw(one.getContext('2d'));
+      const ox = (j % cols) * cw, oy = Math.floor(j / cols) * ch;
+      const circ = (cx, cy, r) => { x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.clip(); x.drawImage(one, cx - r, cy - r, r * 2, r * 2); x.restore(); };
+      circ(ox + 170, oy + 180, 150); circ(ox + 370, oy + 300, 48);
+      x.fillStyle = '#222'; x.font = '700 19px system-ui'; x.fillText(it.label, ox + 20, oy + 385);
+    });
+  }
+</script>
+</body>
+</html>

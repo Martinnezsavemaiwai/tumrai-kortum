@@ -11,7 +11,7 @@
 //
 // Pose fields (radians unless noted): lSh/rSh shoulder (0 = arm hanging, + = out and up), lEl/rEl elbow
 // (+ = forearm swings further out, − = folds in toward the face), lHip/rHip, lKnee/rKnee, lean, tilt (head),
-// look/lookY −1…1, bob (px), sx/sy squash, eyes, mouth, talk 0…1 (mouth open), handL/handR
+// look/lookY −1…1, bob (px), sx/sy squash, eyes, mouth, mouthSize (× width, default 1), talk 0…1 (mouth open), handL/handR
 // ('open' 'fist' 'point' 'peace' 'thumb' 'relax'), fx ['sweat' 'blush' 'tears' 'anger' 'shock' 'sparkle'],
 // reachL/reachR [x, y]: the wrist goes there (IK, same coordinates as the figure's x, y; overrides that arm's
 // lSh/lEl or rSh/rEl). Move the target over t to animate it: { ...R.act(t, keys), reachR: [knob.x, knob.y] }.
@@ -20,7 +20,19 @@
   const G = globalThis.G, U = globalThis.U, H = U.hash;
   const INK = '#1C1620';
 
-  const sh = (ctx, pts, fill, seed, o = {}) => G.shape(ctx, pts, { fill, seed, lw: o.lw ?? 4, alpha: o.alpha ?? 1, stroke: o.stroke, hatch: o.hatch ? { color: 'rgba(0,0,0,0.16)', gap: 8, angle: 0.8 } : null });
+  // hair2 (ไล่สีผม): while hair is drawn, HG is set and every shape filled with the hair colour fades into hair2 from
+  // y0 (roots, transparent) to y1 (tips, solid), kept inside that shape
+  let HG = null;
+  const sh = (ctx, pts, fill, seed, o = {}) => {
+    const r = G.shape(ctx, pts, { fill, seed, lw: o.lw ?? 4, alpha: o.alpha ?? 1, stroke: o.stroke, hatch: o.hatch ? { color: 'rgba(0,0,0,0.16)', gap: 8, angle: 0.8 } : null });
+    if (HG && fill === HG.from) {
+      ctx.save(); ctx.beginPath(); G.path(ctx, pts, true); ctx.clip();
+      const g = ctx.createLinearGradient(0, HG.y0, 0, HG.y1); g.addColorStop(0, HG.to + '00'); g.addColorStop(1, HG.to);
+      const [x0, y0, x1, y1] = G.bbox(pts); ctx.fillStyle = g; ctx.fillRect(x0, y0, x1 - x0, y1 - y0); ctx.restore();
+    }
+    return r;
+  };
+  const withHair = (c, y0, y1, fn) => { HG = c.hair2 ? { from: c.hair, to: c.hair2, y0, y1 } : null; try { fn(); } finally { HG = null; } };
   const ell = (ctx, cx, cy, rx, ry, fill, seed, o) => sh(ctx, G.ellPts(cx, cy, rx, ry), fill, seed, o);
   const poly = (ctx, pts, fill, seed, o) => sh(ctx, G.polyPts(pts, 14), fill, seed, o);
   const dot = (ctx, x, y, r, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
@@ -60,6 +72,17 @@
     round: { eye: 0.12, eyeX: 0.4, round: true, head: [150, 138], neck: 8, torso: 300, sw: 125, ww: 205, hw: 140, ua: 100, fa: 90, hand: 46, thigh: 80, shin: 78, limb: 40, leg: 50, foot: 50 },
   };
 
+  // ---------- glasses frames (front view): pts(cx, cy, r, side) = the rim as a closed outline; w = half width in r,
+  // lw = rim weight, brow = a thick top bar at that height (browline). Round faces suit angular frames.
+  const GLASSES = {
+    round: { w: 1, lw: 6, pts: (x, y, r) => G.ellPts(x, y, r, r) },
+    rect: { w: 1.28, lw: 6, pts: (x, y, r) => G.rrPts(x - r * 1.28, y - r * 0.78, r * 2.56, r * 1.56, r * 0.3) },
+    square: { w: 1.18, lw: 11, pts: (x, y, r) => G.rrPts(x - r * 1.18, y - r * 1.0, r * 2.36, r * 2.0, r * 0.4) }, // chunky acetate
+    browline: { w: 1.26, lw: 4, brow: 0.62, pts: (x, y, r) => G.rrPts(x - r * 1.26, y - r * 0.7, r * 2.52, r * 1.5, r * 0.5) },
+    aviator: { w: 1.2, lw: 5, pts: (x, y, r, d) => G.polyPts([[x - d * r * 1.2, y - r * 0.85], [x + d * r * 1.15, y - r * 0.85], [x + d * r * 1.1, y + r * 0.2], [x + d * r * 0.55, y + r * 1.0], [x - d * r * 0.4, y + r * 1.05], [x - d * r * 1.2, y + r * 0.2]], 14) },
+    hex: { w: 1.15, lw: 6, pts: (x, y, r) => [0, 1, 2, 3, 4, 5].map((k) => [x + Math.cos(Math.PI / 3 * k) * r * 1.15, y + Math.sin(Math.PI / 3 * k) * r * 1.0]) },
+  };
+
   // ---------- a sample cast (data only: add your own) ----------
   const CAST = {
     mali: { name: 'มะลิ', skin: '#F6D7C3', hair: '#3A2A3E', hairStyle: 'long', eye: '#7A4A9E', top: '#F2F2F2', collar: '#2E4A7A', bottom: '#2E4A7A', bottomStyle: 'skirt', shoes: '#3A3030', tie: '#C83C4A' },
@@ -72,10 +95,11 @@
   // ---------- character spec: every field a `who` object may have (story.mjs validates bible looks with R.check) ----------
   const SPEC = {
     body: Object.keys(BODY),
-    colors: ['skin', 'hair', 'eye', 'top', 'collar', 'bottom', 'shoes', 'tie', 'jacket', 'glasses', 'accent', 'sash', 'band', 'belt', 'socks', 'apron', 'bow', 'vest', 'markColor'],
+    colors: ['skin', 'hair', 'eye', 'top', 'collar', 'bottom', 'shoes', 'tie', 'jacket', 'glasses', 'accent', 'sash', 'band', 'belt', 'socks', 'apron', 'bow', 'vest', 'markColor', 'highlight', 'hair2'],
     hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft', 'buzz', 'twoblock', 'comma', 'sidepart', 'swept', 'bangs', 'braids', 'bun', 'curly'],
     bottomStyle: ['skirt', 'pants', 'shorts', 'sarong'],
     shoeStyle: ['sneaker', 'leather', 'flipflop', 'loafer', 'boot', 'sandal'],
+    glassesStyle: ['round', 'rect', 'square', 'browline', 'aviator', 'hex'],
     flags: ['old', 'crown', 'belly', 'mustache', 'sleeveless', 'check'],
     text: ['name', 'mark'],
   };
@@ -277,7 +301,12 @@
       cap.push(P(1.06, -0.25), P(1.08, 0.05), ...locks(4, 0.2, 0.18));
     } else cap = [...arc(), ...locks(st === 'spiky' ? 6 : 5, 0.22, 0.2, st === 'spiky' ? 0.08 : 0)];
     sh(ctx, cap, c.hair, seed);
-    if (st === 'comma') for (const d of [-1, 1]) G.line(ctx, [B(d * 0.2, -0.3), B(d * 0.5, 0.12), B(d * 0.38, 0.26), B(d * 0.3, 0.16)], { color: shade(c.hair, -0.4), lw: 9, seed: seed + 8 + d }); // the comma curls tucked in at the tips
+    if (c.highlight) { // ผมไฮไลท์: lighter streaks from the crown down to the fringe, kept inside the hair
+      ctx.save(); ctx.beginPath(); G.path(ctx, cap, true); ctx.clip();
+      [-0.85, -0.55, -0.25, 0.25, 0.55, 0.85].forEach((u, k) => G.line(ctx, [P(u * 0.4, -1.1), P(u * 0.75, -0.6), B(u * 1.02, 0.2)], { color: c.highlight, lw: rx * 0.07, seed: seed + 40 + k }));
+      ctx.restore();
+    }
+    if (st === 'comma') for (const d of [-1, 1]) G.line(ctx, [B(d * 0.2, -0.3), B(d * 0.5, 0.12), B(d * 0.38, 0.26), B(d * 0.3, 0.16)], { color: shade(c.hair2 || c.hair, -0.4), lw: 9, seed: seed + 8 + d }); // the comma curls tucked in at the tips (tip colour when the hair fades)
     if (st === 'sidepart') G.line(ctx, [P(-0.4, -0.78), P(-0.44, -0.98)], { color: c.skin || shade(c.hair, 0.5), lw: 6, seed: seed + 8 }); // the parting: a line of scalp
     if (st === 'curly') { // ผมดัด: a ring of tight curls over the crown and the sides, small curls on the forehead
       for (let k = 0; k <= 11; k++) { const a = Math.PI * (0.92 + 1.16 * k / 11); ell(ctx, hx + Math.cos(a) * rx * 1.04, hy - ry * 0.08 + Math.sin(a) * ry * 0.98, rx * 0.28, ry * 0.26, c.hair, seed + 50 + k, { lw: 3 }); }
@@ -357,7 +386,7 @@
     ctx.save(); ctx.translate(0, hipY + bob); ctx.rotate(p.lean); ctx.translate(0, -hipY);
     // back hair turns with the head (it used to stay upright while the face tilted), then lags by p.sway
     ctx.save(); ctx.translate(0, neckTop); ctx.rotate(p.tilt); ctx.translate(0, -neckTop);
-    hairBack(ctx, c, 0, hy, hrx, hry, seed + 1, p.sway || 0);
+    withHair(c, hy - hry * 1.2, hy + hry * 0.2, () => hairBack(ctx, c, 0, hy, hrx, hry, seed + 1, p.sway || 0));
     ctx.restore();
     // torso: shoulders → waist → hips, skirt over the hips
     const waistY = sy + B.torso * 0.62;
@@ -419,15 +448,21 @@
     const ey = hy + hry * (B.eye ?? 0.2), ex = hrx * (B.eyeX ?? (body === 'chibi' ? 0.42 : 0.38));
     for (const d of [-1, 1]) {
       dotEye(ctx, d * ex, ey, d, p, c, seed + 20 + d, hrx * (B.eyeR ?? (body === 'explainer' ? 0.12 : 0.17)));
-      if (c.glasses) { const gr = hrx * 0.24; ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.arc(d * ex, ey, gr, 0, Math.PI * 2); ctx.fill(); ctx.restore(); G.line(ctx, G.ellPts(d * ex, ey, gr, gr).concat([G.ellPts(d * ex, ey, gr, gr)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 }); if (d > 0) G.line(ctx, [[-ex + gr, ey - 4], [0, ey - 10], [ex - gr, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 }); }
+      if (c.glasses) { // a lens tint, the rim, and (once) the bridge; glassesStyle picks the frame shape (GLASSES)
+        const gr = hrx * 0.24, g = GLASSES[c.glassesStyle || 'round'], rim = g.pts(d * ex, ey, gr, d);
+        ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); G.path(ctx, rim, true); ctx.fill(); ctx.restore();
+        G.line(ctx, rim.concat([rim[0]]), { color: c.glasses, lw: g.lw, seed: seed + 90 + d, amp: 0.3 });
+        if (g.brow) G.line(ctx, [[d * ex - gr * g.w, ey - gr * g.brow], [d * ex + gr * g.w, ey - gr * g.brow]], { color: c.glasses, lw: 16, seed: seed + 95 + d, amp: 0.2 });
+        if (d > 0) G.line(ctx, [[-ex + gr * g.w, ey - gr * 0.25], [0, ey - gr * 0.42], [ex - gr * g.w, ey - gr * 0.25]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 });
+      }
     }
-    { mouth(ctx, 0, ey + hry * 0.42, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.2 : 0.12), p, seed + 34, c); /* a smirk/grin must read at phone size */ ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, Math.min(24, hrx * 0.3), Math.min(12, hrx * 0.15), 0, 0, Math.PI * 2); ctx.fill(); } } // the cheeks shrink only on small heads (heroic)
+    { mouth(ctx, 0, ey + hry * 0.42, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.2 : 0.12) * (p.mouthSize || 1), p, seed + 34, c); /* a smirk/grin must read at phone size */ ctx.fillStyle = 'rgba(240,120,140,0.35)'; for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(d * ex * 1.35, ey + hry * 0.28, Math.min(24, hrx * 0.3), Math.min(12, hrx * 0.15), 0, 0, Math.PI * 2); ctx.fill(); } } // the cheeks shrink only on small heads (heroic)
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.2, ey + 10], [d * ex * 1.5, ey + 2]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
     if (c.mustache) { // two curls just above the mouth
       const my = ey + hry * 0.42 - hry * 0.13, w = hrx * 0.24;
       for (const d of [-1, 1]) G.line(ctx, [[d * 4, my], [d * w * 0.5, my + hry * 0.05], [d * w, my - hry * 0.02], [d * w * 1.1, my - hry * 0.1]], { color: c.hair || INK, lw: hry * 0.045, seed: seed + 38 + d });
     }
-    hairFront(ctx, c, 0, hy, hrx, hry, seed + 40, body);
+    withHair(c, hy - hry * 1.2, hy + hry * 0.2, () => hairFront(ctx, c, 0, hy, hrx, hry, seed + 40, body));
     if (c.crown) { // a Thai chada: gold band, three tiers, a tall spire, red gems
       const gold = '#E2B04A', top = hy - hry * 0.95, bw = hrx * 0.8;
       poly(ctx, [[-bw, top + hry * 0.18], [bw, top + hry * 0.18], [bw * 0.92, top - hry * 0.05], [-bw * 0.92, top - hry * 0.05]], gold, seed + 70);
@@ -528,10 +563,10 @@
       if (c.glasses) G.line(ctx, G.ellPts(d * ex, ey, hrx * 0.22, hrx * 0.22).concat([G.ellPts(d * ex, ey, hrx * 0.22, hrx * 0.22)[0]]), { color: c.glasses, lw: 6, seed: seed + 90 + d, amp: 0.3 });
     }
     if (c.glasses) G.line(ctx, [[-ex + hrx * 0.22, ey - 4], [ex - hrx * 0.22, ey - 4]], { color: c.glasses, lw: 6, seed: seed + 93, amp: 0.3 });
-    mouth(ctx, 0, ey + hry * 0.5, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.26 : 0.2), p, seed + 34, c);
+    mouth(ctx, 0, ey + hry * 0.5, hrx * (p.mouth === 'smirk' || p.mouth === 'grin' ? 0.26 : 0.2) * (p.mouthSize || 1), p, seed + 34, c);
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.25, ey + 12], [d * ex * 1.55, ey + 4]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
     if (c.mustache) for (const d of [-1, 1]) G.line(ctx, [[d * 4, ey + hry * 0.36], [d * hrx * 0.18, ey + hry * 0.42], [d * hrx * 0.3, ey + hry * 0.32]], { color: c.hair || INK, lw: 8, seed: seed + 38 + d });
-    if (c.hair && c.hairStyle !== 'bald') {
+    if (c.hair && c.hairStyle !== 'bald') withHair(c, hy - hry * 1.3, hy - hry * 0.2, () => {
       const H0 = hy - hry * 1.28, fr = hy - hry * 0.42; // crown top, fringe line
       if (c.hairStyle === 'buzz') sh(ctx, [[-hrx * 1.02, hy - hry * 0.3], [-hrx * 0.95, hy - hry * 1.02], [hrx * 0.95, hy - hry * 1.02], [hrx * 1.02, hy - hry * 0.3]], shade(c.hair, 0.25), seed + 41, { lw: 2 });
       else if (c.hairStyle === 'twoblock') { // moulded two block: clipped side panels flush with the head, a raised top slab that overhangs them
@@ -550,7 +585,7 @@
         if (c.hairStyle === 'swept') for (let k = 0; k < 4; k++) { const x = -hrx * 0.7 + k * hrx * 0.42; poly(ctx, [[x - 30, H0 + 10], [x + 34, H0 - 50 - (k === 1 || k === 2 ? 14 : 0)], [x + 28, H0 + 10]], c.hair, seed + 66 + k); }
         ctx.save(); ctx.globalAlpha = 0.3; G.line(ctx, [[-hrx * 0.6, H0 + 26], [0, H0 + 14], [hrx * 0.5, H0 + 24]], { color: shade(c.hair, 0.7), lw: 10, seed: seed + 48 }); ctx.restore(); // moulded shine
       }
-    }
+    });
     marks(ctx, 0, hy, hrx, p.fx, p.t || 0, seed + 60);
     ctx.restore();
 
