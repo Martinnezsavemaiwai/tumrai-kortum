@@ -22,7 +22,8 @@ node --test ".agents/skills/tumraikortum/scripts/*.test.mjs"     # the whole sui
 
 Frames sampled: 0.7 s into every shot (after its transition) and 0.5 s later; films without SHOTS every `--every` s.
 Measured rather than listened: QA does not hear the sound — `render.js verify` / `check` cover sync and loudness on
-the final file.
+the final file. Speech clarity, masking and whether cues help are heard judgments: use `sound.md` → Audio review
+(excerpts, A/B, human listening or a handoff), and report them apart from these measurements.
 
 Limits: faces are only known for characters drawn with `kit/rig.js` (not
 `Ch.person`); a model-sheet scene (`examples/rig-lab`) warns about faces low on its pages by design;

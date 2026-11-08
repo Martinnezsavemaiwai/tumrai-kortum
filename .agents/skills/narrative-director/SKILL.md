@@ -10,7 +10,7 @@ description: Plot and script a TumraiKortum episode in any genre — logline, be
 - The scene slice from `story-memory` (`story.mjs context <series> <ep>`), never the whole bible or old scripts.
 
 ## Output
-- `<episode>/STORY.md` only: `**แนว:**` line (with the dials V/M/D from `genres.md`), logline, beats with rough times, the one wrong thing + 2–3 clues (each with the shot/moment it appears), red herring, ending choice, VO lines in Thai.
+- `<episode>/STORY.md` only: `**แนว:**` line (with the dials V/M/D from `genres.md`), logline, beats with rough times, the one wrong thing + 2–3 clues (each with the shot/moment it appears), red herring, ending choice, VO lines in Thai, and a short **Sound intent** (emotional job, foreground, palette/pulse, entry/exit/quiet, avoid — `.agents/skills/tumraikortum/references/sound.md` → Sound intent).
 - A short list for `story-memory`: new facts (draft/unknown), who learns what, look/presence changes, threads planted/paid.
 
 ## Workflow
