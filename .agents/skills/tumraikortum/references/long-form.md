@@ -53,8 +53,10 @@ dialogue close-ups. Wide frames want more stuff in them: a second character, a p
 ## Sound
 
 `song.js` builds the whole timeline as usual (one `out/music.wav`). Long beds: loop chords or
-`Genre.play(name, { clock, from, to, … })`; change the bed per chapter so the ear notices a new chapter too;
-a whoosh + `ting` on each card. Measure with `STEMS=1 node song.js` + `levels.js` (−14 LUFS).
+`Genre.play(name, { clock, from, to, … })`. Plan music changes and cues from the Sound intent and the arc: a new
+bed or an accent can mark a chapter that turns, but a card that needs none gets none, and a quiet stretch is fine
+([sound.md](sound.md#sound-intent)). Measuring needs song.js to pass `stemDir`
+([Measuring stems](sound.md#measuring-stems)); excerpts and listening: [Audio review](sound.md#audio-review).
 
 ## Voice budget
 
