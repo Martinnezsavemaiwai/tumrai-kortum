@@ -17,6 +17,7 @@ images/
 
 # --- local-only work (not part of the repo) ---
 yai-ep1/
+office-ep1/
 
 # --- fonts are downloaded by setup (Kanit, SIL OFL) ---
 /fonts/
