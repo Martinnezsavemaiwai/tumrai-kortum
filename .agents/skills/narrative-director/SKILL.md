@@ -18,6 +18,7 @@ description: Plot and script a TumraiKortum episode in any genre — logline, be
 2. Pick the shape: horror/mystery → `.agents/skills/tumraikortum/references/story-format.md` (hook at 0 s, ≤ 3 hits, choice ending); other genres → the genre row's beat pattern; long videos → `.agents/skills/tumraikortum/references/long-form.md` chapters.
 3. Write the clue list before the beats. Every clue must be visible on a phone (text ≥ 32 px, held ≥ 1.5 s).
 4. Write VO lines short: ≈ 11 Thai characters per second of shot (the measured voice rate), no line across a hit.
+   If the `thai-writer` skill is installed, run the lines through it as spoken Thai before showing them: fix translated or written-style phrasing (a line opening with `ซึ่ง`, `ไม่ดีต่อ…`, wrong collocations), keep lines that already sound right, never make a line longer, and leave `…` (a voice pause) and `*word*` (the subtitle keyword) alone.
 5. Show the user STORY.md; after approval hand the fact list to `story-memory`.
 
 ## Validation criteria
