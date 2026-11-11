@@ -99,6 +99,7 @@
     hairStyle: ['long', 'short', 'bob', 'ponytail', 'twintail', 'spiky', 'bald', 'tuft', 'buzz', 'twoblock', 'comma', 'sidepart', 'swept', 'bangs', 'braids', 'bun', 'curly'],
     bottomStyle: ['skirt', 'pants', 'shorts', 'sarong'],
     shoeStyle: ['sneaker', 'leather', 'flipflop', 'loafer', 'boot', 'sandal'],
+    mustacheStyle: ['curl', 'brush', 'pencil'],
     glassesStyle: ['round', 'rect', 'square', 'browline', 'aviator', 'hex'],
     flags: ['old', 'crown', 'belly', 'mustache', 'sleeveless', 'check'],
     text: ['name', 'mark'],
@@ -460,7 +461,10 @@
     if (c.old) for (const d of [-1, 1]) G.line(ctx, [[d * ex * 1.2, ey + 10], [d * ex * 1.5, ey + 2]], { color: shade(c.skin, -0.3), lw: 3, seed: seed + 36 + d });
     if (c.mustache) { // two curls just above the mouth
       const my = ey + hry * 0.42 - hry * 0.13, w = hrx * 0.24;
-      for (const d of [-1, 1]) G.line(ctx, [[d * 4, my], [d * w * 0.5, my + hry * 0.05], [d * w, my - hry * 0.02], [d * w * 1.1, my - hry * 0.1]], { color: c.hair || INK, lw: hry * 0.045, seed: seed + 38 + d });
+      const ms = c.mustacheStyle || 'curl';
+      if (ms === 'brush') { ctx.fillStyle = c.hair || INK; ctx.beginPath(); ctx.roundRect(-w * 1.5, my - hry * 0.07, w * 3, hry * 0.11, hry * 0.055); ctx.fill(); } // a thick bar wider than the mouth (narrower reads as a toothbrush moustache)
+      else if (ms === 'pencil') for (const d of [-1, 1]) G.line(ctx, [[d * 6, my], [d * w * 0.9, my], [d * w * 1.15, my - hry * 0.05]], { color: c.hair || INK, lw: hry * 0.03, seed: seed + 38 + d }); // a thin line, tips flicked up
+      else for (const d of [-1, 1]) G.line(ctx, [[d * 4, my], [d * w * 0.5, my + hry * 0.05], [d * w, my - hry * 0.02], [d * w * 1.1, my - hry * 0.1]], { color: c.hair || INK, lw: hry * 0.045, seed: seed + 38 + d });
     }
     withHair(c, hy - hry * 1.2, hy + hry * 0.2, () => hairFront(ctx, c, 0, hy, hrx, hry, seed + 40, body));
     if (c.crown) { // a Thai chada: gold band, three tiers, a tall spire, red gems
