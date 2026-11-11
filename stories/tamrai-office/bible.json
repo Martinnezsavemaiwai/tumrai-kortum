@@ -1,0 +1,232 @@
+{
+  "series": "tamrai-office",
+  "title": "ทำไรก็ทำ Office",
+  "genre": "ตลกชีวิตประจำวัน · คลิปสั้น 9:16 สำหรับเพจ Facebook ทำไรก็ทำ · ลายเส้น flat",
+  "episodes": [
+    {
+      "id": "ep1",
+      "title": "งานง่าย ๆ",
+      "after": null,
+      "status": "draft",
+      "summary": "พี่บอสวางแฟ้มหนาลงโต๊ะโอ๊ต บอกว่างานง่าย ชั่วโมงเดียวเสร็จ โอ๊ตเปิดจอเจอ 1,248 ไฟล์ มิ้นท์ถามว่านี่งานหรือข้อมูลทั้งบริษัท บอสตอบว่า \"ก็พี่ไม่ได้ทำไง\" แล้วจิบกาแฟต่อ โอ๊ตปิดโน้ตบุ๊กเงียบ ๆ"
+    }
+  ],
+  "characters": {
+    "oat": {
+      "name": "โอ๊ต",
+      "status": "draft",
+      "body": "round",
+      "role": "พนักงานออฟฟิศ ตัวเอก",
+      "traits": [
+        "ขี้เกียจ",
+        "หน้านิ่ง",
+        "รับมุกด้วยความเงียบ"
+      ],
+      "voice": "ชาย ช้า เนือย ๆ ประโยคสั้น · ElevenLabs Callum N2lVS1w4EtoT3dr4eOWO",
+      "look": {
+        "skin": "#D9A882",
+        "hair": "#4A3226",
+        "hairStyle": "swept",
+        "eye": "#3A2A20",
+        "top": "#6FA8D6",
+        "collar": "#F2F2F2",
+        "mark": "ท",
+        "markColor": "#1F3E66",
+        "bottom": "#C9B48A",
+        "bottomStyle": "pants",
+        "shoes": "#3A3030",
+        "shoeStyle": "sneaker"
+      }
+    },
+    "mint": {
+      "name": "มิ้นท์",
+      "status": "draft",
+      "body": "chibi",
+      "role": "เพื่อนร่วมงานโต๊ะข้าง ๆ",
+      "traits": [
+        "คิดมาก",
+        "ตกใจเกินเหตุ",
+        "หวังดี"
+      ],
+      "voice": "หญิง เร็ว ร้อนรน · ElevenLabs Sarah EXAVITQu4vr4xnSDxMaL",
+      "look": {
+        "skin": "#F2D0B4",
+        "hair": "#2A1E22",
+        "hairStyle": "bun",
+        "accent": "#F28AA8",
+        "eye": "#3A6E5A",
+        "top": "#A8DCC8",
+        "bottom": "#D8CCB4",
+        "bottomStyle": "pants",
+        "shoes": "#F2F2F2",
+        "shoeStyle": "sneaker",
+        "glasses": "#2A2230",
+        "glassesStyle": "rect"
+      }
+    },
+    "boss": {
+      "name": "พี่บอส",
+      "status": "draft",
+      "body": "chibi",
+      "role": "หัวหน้าทีม",
+      "traits": [
+        "อวดเก่ง",
+        "มั่นใจเกินเหตุ",
+        "พูดเรื่องเหลือเชื่อด้วยหน้าปกติ"
+      ],
+      "voice": "ชาย ทุ้ม สบาย ๆ มั่นใจ · ElevenLabs Brian nPczCjzI2devNBz1zQrb",
+      "look": {
+        "skin": "#D9A882",
+        "hair": "#1A1418",
+        "hairStyle": "sidepart",
+        "eye": "#3A2A20",
+        "top": "#F2F2F2",
+        "tie": "#2F6A4A",
+        "belt": "#3A2A1E",
+        "bottom": "#4A4A52",
+        "bottomStyle": "pants",
+        "shoes": "#2A1E1A",
+        "shoeStyle": "leather",
+        "belly": true,
+        "mustache": true,
+        "mustacheStyle": "brush",
+        "glasses": "#2A1E1A",
+        "glassesStyle": "browline"
+      }
+    }
+  },
+  "facts": [
+    {
+      "id": "f1",
+      "status": "draft",
+      "about": [
+        "oat",
+        "mint",
+        "boss"
+      ],
+      "text": "ทั้งสามคนทำงานในออฟฟิศเดียวกัน โต๊ะโอ๊ตกับมิ้นท์อยู่ติดกัน"
+    },
+    {
+      "id": "f2",
+      "status": "draft",
+      "about": [
+        "boss",
+        "oat"
+      ],
+      "text": "บอสไม่ได้เป็นคนลงมือทำงานที่มอบหมายให้โอ๊ตใน EP1 (โฟลเดอร์งานง่าย 1,248 ไฟล์)"
+    },
+    {
+      "id": "f3",
+      "status": "draft",
+      "about": [
+        "mint",
+        "oat"
+      ],
+      "text": "มิ้นท์อายุน้อยกว่าโอ๊ต เรียกโอ๊ตว่า \"พี่\""
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "ep": "ep1",
+      "shot": 1,
+      "who": [
+        "boss",
+        "oat"
+      ],
+      "text": "บอสวางแฟ้มหนา \"งานง่าย\" ลงโต๊ะโอ๊ต บอกว่าชั่วโมงเดียวเสร็จ",
+      "learn": [
+        {
+          "who": "boss",
+          "fact": "f2"
+        }
+      ]
+    },
+    {
+      "id": "e2",
+      "ep": "ep1",
+      "shot": 3,
+      "who": [
+        "boss"
+      ],
+      "text": "บอสยืนยันว่างานง่ายสุด ๆ โดยหันหน้าหนีแฟ้ม ไม่มองงานเลย"
+    },
+    {
+      "id": "e3",
+      "ep": "ep1",
+      "shot": 4,
+      "who": [
+        "oat"
+      ],
+      "text": "โอ๊ตเปิดโน้ตบุ๊ก เจอโฟลเดอร์ งานง่าย_FINAL_v27 มี 1,248 ไฟล์"
+    },
+    {
+      "id": "e4",
+      "ep": "ep1",
+      "shot": 5,
+      "who": [
+        "mint",
+        "oat"
+      ],
+      "text": "มิ้นท์โผล่มาถามโอ๊ตว่านี่งานหรือข้อมูลทั้งบริษัท"
+    },
+    {
+      "id": "e5",
+      "ep": "ep1",
+      "shot": 7,
+      "who": [
+        "boss",
+        "oat",
+        "mint"
+      ],
+      "text": "บอสตอบหน้าปกติว่า \"ก็พี่ไม่ได้ทำไง\"",
+      "learn": [
+        {
+          "who": "oat",
+          "fact": "f2"
+        },
+        {
+          "who": "mint",
+          "fact": "f2"
+        }
+      ]
+    },
+    {
+      "id": "e6",
+      "ep": "ep1",
+      "shot": 8,
+      "who": [
+        "oat",
+        "boss",
+        "mint"
+      ],
+      "text": "โอ๊ตปิดฝาโน้ตบุ๊กเงียบ ๆ บอสจิบกาแฟต่อ"
+    }
+  ],
+  "threads": [
+    {
+      "id": "t1",
+      "plant": "e2",
+      "payoff": "e5",
+      "text": "บอสบอกว่างานง่ายโดยไม่เคยมองงาน"
+    }
+  ],
+  "tests": [
+    {
+      "id": "oat-knows-f2",
+      "ep": "ep1",
+      "expect": {
+        "oat.knows.f2": "true"
+      },
+      "why": "มุกเฉลยของ EP1: หลังช็อต 7 โอ๊ตรู้ว่าบอสไม่ได้ทำงานชิ้นนี้"
+    },
+    {
+      "id": "mint-knows-f2",
+      "ep": "ep1",
+      "expect": {
+        "mint.knows.f2": "true"
+      },
+      "why": "มิ้นท์ได้ยินบอสเฉลยในช็อตเดียวกัน"
+    }
+  ]
+}
